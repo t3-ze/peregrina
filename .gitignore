@@ -1,0 +1,7 @@
+# 참고 이미지(외부 작품)와 기획 메모는 저장소에 올리지 않는다
+/reference/
+/page-design.md
+.claude/
+# 원본 초상화는 로컬에만 두고, 웹용 사본(assets/portraits)만 올린다
+/portraits/
+__pycache__/
