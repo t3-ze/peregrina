@@ -3,109 +3,150 @@ import { rng, f1, esc } from "./util.js";
 
 const K = "#2c2015", P = "#f4e9cd", P2 = "#e6d6b0", WOOD = "#9a6e45", STONE = "#b9b2a4";
 
-// ── 기관별 층 구성 (위층 → 아래층). g: 지면 아래로 내려가는 첫 층의 순번 ──
-// it: 가구, who: 그 층에 머무는 인물, wing: 건물 옆 바깥 공간
+// ── 기관별 단면 (위층 → 아래층) ──
+// shape: build(건물) · ship(배) · terrace(비탈 계단식) · shaft(수직 갱도) · outdoor(바깥) · cliff(절벽)
+// wall: 벽 재질 marble·stone·brick·timber·plank·glass·stripes·dream / stair: straight·spiral·none
+// ext: 바깥 장식 buttress·cloister·turrets·columns·jetty·chimney·clock·bridge·awning·sign·tiers·hull·rigging
+// 층: n 표기, t 이름, it 가구, who 인물, w 폭, dx 가로 어긋남, ceil 천장(flat·arch·gothic·dome·vault·attic), roof 지붕(종류:재질), wall 벽 재질 덮어쓰기
+// g: 지면 아래로 내려가는 첫 층의 순번
 export const SEC = {
-  aurora: { shape: "tower", w: 380, roof: "sun", g: 7, floors: [
-    { n: "7F", t: "새벽 기도실", it: ["candle", "altar", "win", "candle"] },
-    { n: "6F", t: "원장실", it: ["win", "desk", "plant"], who: ["셀레스틴"] },
-    { n: "5F", t: "교관 숙소 · 지도관실", it: ["desk", "clock", "bed"], who: ["가브리엘"] },
-    { n: "4F", t: "견습생 숙소 · 북쪽 계단참", it: ["bunk", "bunk", "chest"], who: ["루시앙"] },
-    { n: "3F", t: "도서실 · 성유물 보관소", it: ["shelf", "lectern", "shelf", "chest"] },
-    { n: "2F", t: "강의실 (치유학 · 계시학)", it: ["lectern", "bench", "bench", "globe"] },
-    { n: "1F", t: "정화의 회랑 · 치유 진료소", it: ["bed", "jars", "bed", "counter"] },
-    { n: "B1", t: "정화 수조", it: ["tank", "chest", "tank"] } ] },
-  somnium: { shape: "manor", w: 660, g: 4, floors: [
-    { n: "夢", t: "꿈층 · 끝없는 도서관", it: ["shelf", "lantern", "shelf", "cloud", "shelf"], who: ["녹스"], dream: true },
-    { n: "3F", t: "원장의 서재 · 학생 숙소", it: ["shelf", "desk", "bed", "bed"] },
-    { n: "2F", t: "꿈 전언실 · 해몽실", it: ["bed", "bed", "candle", "bed"], who: ["이졸데"] },
-    { n: "1F", t: "현관홀 · 월광 강의실 · 식당", it: ["door", "lectern", "table", "lantern"], who: ["카스"] } ] },
-  flumen: { shape: "ship", w: 640, g: 3, floors: [
-    { n: "塔", t: "돛대 종탑 · 수위 관측대", it: ["bell", "scope"], who: ["마테오"], narrow: 180 },
-    { n: "UP", t: "강의실 · 해먹 선실", it: ["lectern", "hammock", "hammock", "bench"] },
-    { n: "DK", t: "갑판층 · 도선 수로 · 기록 보관소", it: ["boat", "letters", "table", "laundry"], who: ["니나"] },
-    { n: "HD", t: "선창 · 유리 바닥 물길 강의실", it: ["tank", "barrel", "crate", "tank"] } ],
+  aurora: { shape: "build", wall: "marble", stair: "spiral", ext: ["buttress", "cloister"], g: 7, floors: [
+    { n: "7F", t: "새벽 기도실", it: ["candle", "altar", "candle"], w: 300, ceil: "dome", roof: "sun:gold" },
+    { n: "6F", t: "원장실", it: ["win", "desk", "plant"], who: ["셀레스틴"], w: 320, ceil: "gothic" },
+    { n: "5F", t: "교관 숙소 · 지도관실", it: ["desk", "clock", "bed"], who: ["가브리엘"], w: 340, ceil: "gothic" },
+    { n: "4F", t: "견습생 숙소 · 북쪽 계단참", it: ["bunk", "chest"], who: ["루시앙"], w: 360 },
+    { n: "3F", t: "도서실 · 성유물 보관소", it: ["shelf", "lectern", "shelf"], w: 380, ceil: "arch" },
+    { n: "2F", t: "강의실", it: ["lectern", "bench", "globe"], w: 400, ceil: "arch" },
+    { n: "1F", t: "정화의 회랑 · 치유 진료소", it: ["bed", "jars", "bed", "counter"], w: 420, ceil: "gothic" },
+    { n: "B1", t: "정화 수조", it: ["tank", "chest", "tank"], w: 440, ceil: "vault", wall: "stone" } ] },
+  somnium: { shape: "build", wall: "timber", stair: "straight", ext: ["jetty", "chimney"], g: 4, float: 1, floors: [
+    { n: "夢", t: "꿈층 · 끝없는 도서관", it: ["shelf", "lantern", "shelf", "cloud", "shelf"], who: ["녹스"], w: 560, ceil: "gothic", wall: "dream", dream: true },
+    { n: "3F", t: "원장의 서재 · 학생 숙소", it: ["shelf", "desk", "bed"], w: 600, ceil: "attic", roof: "mansard:slate" },
+    { n: "2F", t: "꿈 전언실 · 해몽실", it: ["bed", "bed", "candle", "bed"], who: ["이졸데"], w: 660 },
+    { n: "1F", t: "현관홀 · 월광 강의실 · 식당", it: ["door", "lectern", "table", "lantern"], who: ["카스"], w: 600, ceil: "arch", wall: "stone" } ] },
+  flumen: { shape: "ship", wall: "plank", stair: "straight", ext: ["rigging"], g: 3, water: true, floors: [
+    { n: "塔", t: "돛대 종탑 · 수위 관측대", it: ["bell", "scope"], who: ["마테오"], w: 190, dx: -170, roof: "conic:copper" },
+    { n: "UP", t: "강의실 · 해먹 선실", it: ["lectern", "hammock", "hammock"], w: 460, dx: 40, ceil: "arch", roof: "gable:copper" },
+    { n: "DK", t: "갑판층 · 도선 수로 · 기록 보관소", it: ["boat", "letters", "table", "laundry"], who: ["니나"], w: 680 },
+    { n: "HD", t: "선창 · 유리 바닥 물길 강의실", it: ["tank", "barrel", "crate", "tank"], w: 600, ceil: "vault" } ],
     wing: { side: "right", t: "원장의 배", it: ["boat"], who: ["오르솔라"], water: true } },
-  hortus: { shape: "dome", w: 640, g: 2, floors: [
-    { n: "2F", t: "공중 회랑 · 사교실 · 축제 준비실", it: ["banner", "bench", "flowers", "win"], who: ["앙리"] },
-    { n: "1F", t: "월계수 원장실 · 조향실 · 강의 온실", it: ["jars", "tree", "desk", "plant"], who: ["베아트리체"] },
-    { n: "B1", t: "뿌리층 · 씨앗 보관고 · 약초 건조실", it: ["jars", "herbs", "crate", "herbs"] } ],
+  hortus: { shape: "build", wall: "glass", stair: "spiral", ext: ["chimney"], g: 2, floors: [
+    { n: "2F", t: "공중 회랑 · 사교실 · 축제 준비실", it: ["banner", "bench", "flowers"], who: ["앙리"], w: 460, ceil: "dome", roof: "dome:glass" },
+    { n: "1F", t: "월계수 원장실 · 조향실 · 강의 온실", it: ["jars", "tree", "desk", "plant"], who: ["베아트리체"], w: 660, roof: "gable:glass" },
+    { n: "B1", t: "뿌리층 · 씨앗 보관고 · 약초 건조실", it: ["jars", "herbs", "crate", "herbs"], w: 600, ceil: "vault", wall: "brick" } ],
     wing: { side: "right", t: "바깥 정원 · 금지 울타리", it: ["flowers", "fence"], who: ["로즈마리"] } },
-  fornax: { shape: "terrace", w: 360, g: 5, floors: [
-    { n: "5", t: "관장의 대장간", it: ["forge", "anvil"], who: ["브란"] },
-    { n: "4", t: "교관 대장간 · 강화술 연습장", it: ["anvil", "target"] },
-    { n: "3", t: "공동 화로 광장 · 식당", it: ["fire", "table"] },
-    { n: "2", t: "견습 작업장 · 다락 숙소", it: ["forge", "desk", "bed"], who: ["토비"] },
-    { n: "1", t: "정문 · 투기장 터널 · 무기고", it: ["sword", "door"], who: ["레아"] } ] },
-  tonans: { shape: "keep", w: 600, g: 5, floors: [
-    { n: "5F", t: "결계 탑 꼭대기 · 원장실", it: ["win", "desk", "banner"], who: ["하인리히"], narrow: 260 },
-    { n: "4F", t: "교관실 · 문서실", it: ["shelf", "desk", "shelf", "clock"] },
-    { n: "3F", t: "학생회실 · 도서관 · 생도 숙소", it: ["desk", "shelf", "bunk", "bunk"], who: ["엘레오노르"] },
-    { n: "2F", t: "강의실 (결계학 · 전술 · 행정법)", it: ["map", "lectern", "bench", "bench"] },
-    { n: "1F", t: "안뜰 연병장 · 위병소 · 식당", it: ["target", "sword", "table", "banner"] },
-    { n: "B1", t: "결계 연습장 · 징계실", it: ["target", "chest", "rune"] } ] },
-  profundum: { shape: "shaft", w: 620, g: 1, floors: [
-    { n: "GL", t: "입구 · 가고일 고티에 · 출입 명부", it: ["statue", "lectern"], narrow: 240 },
+  fornax: { shape: "terrace", wall: "brick", stair: "straight", g: 5, floors: [
+    { n: "5", t: "관장의 대장간", it: ["forge", "anvil"], who: ["브란"], w: 320, roof: "saw:slate" },
+    { n: "4", t: "교관 대장간 · 강화술 연습장", it: ["anvil", "target"], w: 360, roof: "saw:tile" },
+    { n: "3", t: "공동 화로 광장 · 식당", it: ["fire", "table"], w: 400, ceil: "arch", roof: "gable:tile" },
+    { n: "2", t: "견습 작업장 · 다락 숙소", it: ["forge", "desk", "bed"], who: ["토비"], w: 380, roof: "saw:tile" },
+    { n: "1", t: "정문 · 투기장 터널 · 무기고", it: ["sword", "door"], who: ["레아"], w: 420, ceil: "vault", roof: "flat" } ] },
+  tonans: { shape: "build", wall: "stone", stair: "straight", ext: ["turrets"], g: 5, floors: [
+    { n: "5F", t: "결계 탑 꼭대기 · 원장실", it: ["win", "desk", "banner"], who: ["하인리히"], w: 280, ceil: "gothic", roof: "conic:slate" },
+    { n: "4F", t: "교관실 · 문서실", it: ["shelf", "desk", "clock"], w: 600, roof: "crenel" },
+    { n: "3F", t: "학생회실 · 도서관 · 생도 숙소", it: ["desk", "shelf", "bunk"], who: ["엘레오노르"], w: 600 },
+    { n: "2F", t: "강의실", it: ["map", "lectern", "bench"], w: 600, ceil: "arch" },
+    { n: "1F", t: "안뜰 연병장 · 위병소 · 식당", it: ["target", "sword", "table"], w: 600, ceil: "gothic" },
+    { n: "B1", t: "결계 연습장 · 징계실", it: ["target", "chest", "rune"], w: 560, ceil: "vault" } ] },
+  profundum: { shape: "shaft", wall: "stone", g: 1, w: 640, floors: [
+    { n: "GL", t: "입구 · 가고일 · 출입 명부", it: ["statue", "lectern"], w: 280, ceil: "gothic", roof: "pointed:slate" },
     { n: "B1-2", t: "열람실 · 강의실 · 연구자 숙소", it: ["shelf", "desk", "lamp", "shelf"] },
-    { n: "B3-5", t: "고문서 서가 · 기록관실", it: ["shelf", "scroll", "shelf", "desk"], who: ["핀"] },
-    { n: "B6", t: "봉인관", it: ["chest", "cage", "jars", "chest"], who: ["이리나"] },
-    { n: "B7-8", t: "하층 서가 · 하루가 며칠인 곳", it: ["shelf", "clock", "shelf"] },
-    { n: "B9", t: "대사서실", it: ["shelf", "desk", "globe", "shelf"], who: ["에제키엘"] },
-    { n: "▽", t: "금서고 계단 · 닫힌 문", it: ["stairs", "bigdoor"], narrow: 300 } ] },
+    { n: "B3-5", t: "고문서 서가 · 기록관실", it: ["shelf", "scroll", "desk"], who: ["핀"] },
+    { n: "B6", t: "봉인관", it: ["chest", "cage", "jars"], who: ["이리나"] },
+    { n: "B7-8", t: "하층 서가", it: ["shelf", "clock", "shelf"] },
+    { n: "B9", t: "대사서실", it: ["shelf", "desk", "globe"], who: ["에제키엘"] },
+    { n: "▽", t: "금서고 계단 · 닫힌 문", it: ["bigdoor"], w: 320, ceil: "gothic", end: true } ] },
 
-  concilium: { shape: "hall", w: 640, g: 3, floors: [
-    { n: "2F", t: "사절 참관석", it: ["banner", "chair", "chair"], who: ["퍽"] },
-    { n: "1F", t: "본회의장 · 의장석 · 의원석", it: ["bench", "throne", "bench"], who: ["아우구스투스", "세실리아"] },
-    { n: "B1", t: "맹약문 보관실", it: ["scroll", "chest", "lamp"] } ] },
-  tabularium: { shape: "hall", w: 600, g: 2, floors: [
-    { n: "2F", t: "기록원장실", it: ["shelf", "desk", "clock"], who: ["아드리안 그레이"] },
-    { n: "1F", t: "각인 감정실 · 계약 대장고", it: ["lectern", "shelf", "shelf", "lamp"], who: ["야나"] },
-    { n: "B1", t: "봉인 서고", it: ["shelf", "chest", "shelf"] } ] },
-  ordo: { shape: "keep", w: 560, g: 3, floors: [
-    { n: "3F", t: "단장실", it: ["map", "desk", "banner"], who: ["레온하르트"], narrow: 300 },
-    { n: "2F", t: "기사 숙소 · 무기고", it: ["bunk", "sword", "bunk"] },
-    { n: "1F", t: "훈련장 · 순찰로 대기실", it: ["target", "sword", "bench"], who: ["미라"] } ],
+  concilium: { shape: "build", wall: "marble", stair: "straight", ext: ["columns"], g: 2, floors: [
+    { n: "2F", t: "사절 참관석", it: ["banner", "chair", "chair"], who: ["퍽"], w: 460, ceil: "dome", roof: "dome:copper" },
+    { n: "1F", t: "본회의장 · 의장석 · 의원석", it: ["bench", "throne", "bench"], who: ["아우구스투스", "세실리아"], w: 660, ceil: "arch", roof: "flat" },
+    { n: "B1", t: "맹약문 보관실", it: ["scroll", "chest", "lamp"], w: 580, ceil: "vault", wall: "stone" } ] },
+  tabularium: { shape: "build", wall: "marble", stair: "straight", ext: ["columns"], g: 2, floors: [
+    { n: "2F", t: "기록원장실", it: ["shelf", "desk", "clock"], who: ["아드리안 그레이"], w: 600, roof: "pediment" },
+    { n: "1F", t: "각인 감정실 · 계약 대장고", it: ["lectern", "shelf", "shelf"], who: ["야나"], w: 620, ceil: "arch" },
+    { n: "B1", t: "봉인 서고", it: ["shelf", "chest", "shelf"], w: 560, ceil: "vault", wall: "stone" } ] },
+  ordo: { shape: "build", wall: "stone", stair: "straight", ext: ["turrets"], g: 3, floors: [
+    { n: "3F", t: "단장실", it: ["map", "desk", "banner"], who: ["레온하르트"], w: 300, ceil: "gothic", roof: "conic:slate" },
+    { n: "2F", t: "기사 숙소 · 무기고", it: ["bunk", "sword", "bunk"], w: 560, roof: "crenel" },
+    { n: "1F", t: "훈련장 · 순찰로 대기실", it: ["target", "sword", "bench"], who: ["미라"], w: 560, ceil: "arch" } ],
     wing: { side: "right", t: "마구간", it: ["hay", "barrel"], who: ["고드윈"] } },
-  cursus: { shape: "house", w: 560, g: 3, floors: [
-    { n: "3F", t: "국장실", it: ["desk", "clock", "letters"], who: ["오토"] },
-    { n: "2F", t: "분류실", it: ["letters", "mailbag", "letters"], who: ["피오"] },
-    { n: "1F", t: "분실 우편 보관소", it: ["letters", "chest", "golem"], who: ["그레타"] } ],
+  cursus: { shape: "build", wall: "brick", stair: "straight", ext: ["clock"], g: 3, floors: [
+    { n: "3F", t: "국장실", it: ["desk", "clock", "letters"], who: ["오토"], w: 500, ceil: "attic", roof: "mansard:slate" },
+    { n: "2F", t: "분류실", it: ["letters", "mailbag", "letters"], who: ["피오"], w: 580 },
+    { n: "1F", t: "분실 우편 보관소", it: ["letters", "chest", "golem"], who: ["그레타"], w: 580, ceil: "arch" } ],
     wing: { side: "right", t: "우편선 부두", it: ["boat"], water: true } },
-  mercator: { shape: "house", w: 620, g: 3, floors: [
-    { n: "3F", t: "조합장실", it: ["chest", "desk", "scales"], who: ["로렌초", "세실리아"] },
-    { n: "2F", t: "뒷골목 골동품 가게", it: ["shelf", "mirror", "jars"], who: ["자스민"] },
-    { n: "1F", t: "대운하 시장 다리 · 행운의 노점", it: ["counter", "crate", "barrel"], who: ["오닐"] } ] },
-  "tabularium-branch": { shape: "house", w: 500, g: 2, floors: [
-    { n: "2F", t: "서류 보관실 · 각인 감정실", it: ["shelf", "shelf", "lectern"] },
-    { n: "1F", t: "등록 창구 · 대기실", it: ["flowers", "counter", "bench"], who: ["토마스"] } ] },
-  inn: { shape: "house", w: 620, g: 4, floors: [
-    { n: "AT", t: "다락 하숙방", it: ["bed", "chest", "cloudlet"], who: ["카이"], narrow: 300 },
-    { n: "2F", t: "객실", it: ["bed", "bunk", "bed"], who: ["아샤", "테오"] },
-    { n: "1F", t: "카운터 · 식당 · 공연 무대", it: ["counter", "table", "harp", "table"], who: ["마르타", "탈리에신"] },
-    { n: "B1", t: "포도주 저장고", it: ["barrel", "barrel", "crate"] } ] },
-  workshop: { shape: "house", w: 480, g: 2, floors: [
-    { n: "2F", t: "창고 · 시제품 선반", it: ["crate", "shelf", "chest"] },
-    { n: "1F", t: "작업대 · 진열장", it: ["shelf", "anvil", "desk"], who: ["빔"] } ],
+  mercator: { shape: "build", wall: "timber", stair: "straight", ext: ["jetty", "bridge"], g: 3, water: true, floors: [
+    { n: "3F", t: "조합장실", it: ["chest", "desk", "scales"], who: ["로렌초", "세실리아"], w: 600, ceil: "attic", roof: "gambrel:tile" },
+    { n: "2F", t: "뒷골목 골동품 가게", it: ["shelf", "mirror", "jars"], who: ["자스민"], w: 620 },
+    { n: "1F", t: "대운하 시장 다리 · 행운의 노점", it: ["counter", "crate", "barrel"], who: ["오닐"], w: 540, wall: "stone", ceil: "arch" } ] },
+  "tabularium-branch": { shape: "build", wall: "brick", stair: "straight", ext: ["awning", "chimney"], g: 2, floors: [
+    { n: "2F", t: "서류 보관실", it: ["shelf", "shelf"], w: 480, ceil: "attic", roof: "gable:tile" },
+    { n: "1F", t: "등록 창구 · 대기실", it: ["flowers", "counter", "bench"], who: ["토마스"], w: 520 } ] },
+  inn: { shape: "build", wall: "timber", stair: "straight", ext: ["jetty", "chimney", "sign"], g: 4, floors: [
+    { n: "AT", t: "다락 하숙방", it: ["bed", "chest", "cloudlet"], who: ["카이"], w: 460, ceil: "attic", roof: "gable:tile" },
+    { n: "2F", t: "객실", it: ["bed", "bunk", "bed"], who: ["아샤", "테오"], w: 660 },
+    { n: "1F", t: "카운터 · 식당 · 공연 무대", it: ["counter", "table", "harp", "table"], who: ["마르타", "탈리에신"], w: 620, wall: "stone" },
+    { n: "B1", t: "포도주 저장고", it: ["barrel", "barrel", "crate"], w: 560, ceil: "vault", wall: "stone" } ] },
+  workshop: { shape: "build", wall: "brick", stair: "straight", ext: ["chimney"], g: 2, floors: [
+    { n: "2F", t: "창고 · 시제품 선반", it: ["crate", "shelf", "chest"], w: 480, roof: "saw:slate" },
+    { n: "1F", t: "작업대 · 진열장", it: ["shelf", "anvil", "desk"], who: ["빔"], w: 500, ceil: "arch" } ],
     wing: { side: "right", t: "시험 마당", it: ["target", "spark"] } },
-  limen: { shape: "tower", w: 300, roof: "lamp", g: 4, floors: [
-    { n: "LT", t: "등불실", it: ["beacon"] },
-    { n: "3F", t: "관측실 · 경계 연구실", it: ["scope", "globe"], who: ["오스왈드"] },
-    { n: "2F", t: "표류자 숙소", it: ["bed", "table"], who: ["한서진"] },
-    { n: "1F", t: "관측소장실 · 접수", it: ["desk", "jars"], who: ["이브"] } ] },
-  vigilia: { shape: "house", w: 480, g: 2, floors: [
-    { n: "2F", t: "쉼터 다락", it: ["bed", "crate", "bed"] },
-    { n: "1F", t: "뒤틀린 사역마 쉼터", it: ["cage", "bowl", "plant"], who: ["엘린"] },
-    { n: "??", t: "본부 (비공개)", it: [], who: ["야경", "시온"], redact: true } ],
+  limen: { shape: "build", wall: "stripes", stair: "spiral", g: 4, floors: [
+    { n: "LT", t: "등불실", it: ["beacon"], w: 200, wall: "glass", roof: "lantern" },
+    { n: "3F", t: "관측실 · 경계 연구실", it: ["scope", "globe"], who: ["오스왈드"], w: 270 },
+    { n: "2F", t: "표류자 숙소", it: ["bed", "table"], who: ["한서진"], w: 310 },
+    { n: "1F", t: "관측소장실 · 접수", it: ["desk", "jars"], who: ["이브"], w: 350, ceil: "arch" } ] },
+  vigilia: { shape: "build", wall: "timber", stair: "straight", ext: ["chimney"], g: 2, floors: [
+    { n: "2F", t: "쉼터 다락", it: ["bed", "crate"], w: 460, ceil: "attic", roof: "thatch" },
+    { n: "1F", t: "뒤틀린 사역마 쉼터", it: ["cage", "bowl", "plant"], who: ["엘린"], w: 500 },
+    { n: "??", t: "본부 (비공개)", it: [], who: ["야경", "시온"], w: 460, ceil: "vault", wall: "stone", redact: true } ],
     wing: { side: "right", t: "마당의 물푸레나무", it: ["ash"] } },
-  caliburnus: { shape: "hall", w: 560, g: 3, fog: true, floors: [
-    { n: "?", t: "가면의 회합실 (장소 불명)", it: ["candle", "table", "candle"], who: ["펜드라곤"] },
-    { n: "?", t: "하프 소리가 나는 곳", it: ["harp", "bench"], who: ["탈리에신"] },
-    { n: "?", t: "바위 곁", it: ["rock"], who: ["퍼시벌"] } ] },
+  caliburnus: { shape: "build", wall: "stone", stair: "straight", g: 3, fog: true, dark: true, ext: ["buttress"], floors: [
+    { n: "?", t: "가면의 회합실 (장소 불명)", it: ["candle", "table", "candle"], who: ["펜드라곤"], w: 480, ceil: "gothic", roof: "pointed:slate" },
+    { n: "?", t: "하프 소리가 나는 곳", it: ["harp", "bench"], who: ["탈리에신"], w: 540, ceil: "gothic" },
+    { n: "?", t: "바위 곁", it: ["rock"], who: ["퍼시벌"], w: 580, ceil: "vault" } ] },
+  "shadow-palace": { shape: "build", wall: "stone", stair: "straight", g: 3, dark: true, ext: ["buttress"], floors: [
+    { n: "玉", t: "안개의 옥좌", it: ["banner", "throne", "banner"], who: ["오베론"], w: 440, ceil: "gothic", roof: "spires:slate" },
+    { n: "鏡", t: "거울 회랑", it: ["mirror", "mirror", "mirror"], w: 600, ceil: "gothic", roof: "pointed:slate" },
+    { n: "庭", t: "꿈의 정원", it: ["flowers", "tree", "flowers"], w: 660, ceil: "arch" } ] },
+  arena: { shape: "build", wall: "stone", stair: "straight", ext: ["tiers"], g: 2, floors: [
+    { n: "上", t: "주인석 · 관중석", it: ["bench", "throne", "bench"], who: ["페트라"], w: 520, roof: "flat" },
+    { n: "場", t: "결투장 · 대기실", it: ["target", "sword", "bench"], who: ["레아"], w: 600, ceil: "arch" } ] },
+  "bell-tower": { shape: "build", wall: "stone", stair: "spiral", g: 1, water: true, flooded: true, floors: [
+    { n: "鐘", t: "종루", it: ["bell"], who: ["청류"], w: 240, ceil: "arch", roof: "conic:slate" },
+    { n: "階", t: "물에 잠긴 계단", it: ["stairs"], w: 260 },
+    { n: "村", t: "잠긴 마을", it: ["ruin", "ruin"], w: 560, ceil: "vault" } ] },
+  "glass-tower": { shape: "build", wall: "glass", stair: "spiral", g: 3, night: true, floors: [
+    { n: "頂", t: "꼭대기 서재", it: ["shelf", "desk"], who: ["멀린"], w: 250, ceil: "gothic", roof: "glass" },
+    { n: "空", t: "편지의 하늘", it: ["flyletters"], w: 290 },
+    { n: "螺", t: "나선 계단", it: ["letters"], w: 330 } ] },
+  "herb-shop": { shape: "build", wall: "timber", stair: "straight", ext: ["chimney"], g: 2, floors: [
+    { n: "2F", t: "약초 건조대", it: ["herbs", "jars"], w: 400, dx: 18, ceil: "attic", roof: "thatch" },
+    { n: "1F", t: "가게 카운터", it: ["jars", "counter", "cauldron"], who: ["셀윈"], w: 440, dx: -8 } ],
+    wing: { side: "right", t: "뒷마당 밭", it: ["flowers", "plant"] } },
+  greenhouse: { shape: "build", wall: "glass", stair: "none", g: 2, broken: true, floors: [
+    { n: "頂", t: "깨진 유리 지붕", it: ["vine", "vine"], w: 380, ceil: "dome", roof: "dome:glass" },
+    { n: "1F", t: "시든 화단 · 녹슨 도구함", it: ["wilted", "chest", "wilted"], who: ["나르기스"], w: 520, wall: "brick" } ] },
+  "storm-watch": { shape: "build", wall: "stone", stair: "spiral", g: 9, floors: [
+    { n: "頂", t: "무너진 망루", it: ["cloud"], who: ["휘린"], w: 240, roof: "broken" },
+    { n: "階", t: "번개 자국 계단", it: ["stairs"], w: 260 },
+    { n: "地", t: "풀밭 쪽 문간", it: ["flowers", "door"], w: 300, ceil: "arch" } ] },
+  "garuda-tower": { shape: "build", wall: "stone", stair: "spiral", g: 9, floors: [
+    { n: "頂", t: "탑 꼭대기 (금역)", it: ["nest"], who: ["가루다"], w: 220, ceil: "dome", roof: "spire:gold" },
+    { n: "羽", t: "깃털의 계단", it: ["feather"], w: 260 },
+    { n: "門", t: "탑의 밑동", it: ["door"], w: 300, ceil: "gothic" } ] },
+  "closed-door": { shape: "shaft", wall: "stone", g: 0, w: 560, floors: [
+    { n: "▽", t: "금서고 계단", it: ["pillar"] },
+    { n: "▽", t: "빈 홈", it: ["pillar", "pillar"] },
+    { n: "門", t: "돌문 앞", it: ["bigdoor"], who: ["네페르"], w: 400, ceil: "gothic", end: true } ] },
+  "deep-bottom": { shape: "shaft", wall: "stone", g: 0, w: 560, floors: [
+    { n: "▽", t: "하층 갱도", it: ["bones"] },
+    { n: "∞", t: "어둠", it: ["eyes"], who: ["니드호그"], redact: true, end: true } ] },
+
   conventus: { shape: "outdoor", w: 680, g: 3, floors: [
     { n: "☾", t: "그믐밤 하늘", it: ["moon", "broom"] },
     { n: "市", t: "마녀 시장 · 이름 없는 교차로", it: ["tent", "jars", "tent"], who: ["빅스"] },
     { n: "火", t: "모닥불", it: ["cauldron", "fire"], who: ["모레이 할멈", "셀윈"] } ] },
-
   plaza: { shape: "outdoor", w: 700, g: 2, floors: [
     { n: "上", t: "해시계 탑 위", it: ["sundial", "bell"] },
     { n: "地", t: "분수대 · 검이 뽑힌 바위 · 순례길", it: ["fountain", "rock", "bench", "sign"], who: ["티슬", "퍼시벌", "테오"] } ],
@@ -130,61 +171,25 @@ export const SEC = {
   mortar: { shape: "outdoor", w: 560, g: 2, floors: [
     { n: "月", t: "달빛 기둥", it: ["moon"] },
     { n: "地", t: "돌절구 · 달꽃 덤불", it: ["flowers", "mortar", "flowers"], who: ["소월"] } ] },
-  "shadow-palace": { shape: "hall", w: 640, g: 3, dark: true, floors: [
-    { n: "玉", t: "안개의 옥좌", it: ["banner", "throne", "banner"], who: ["오베론"] },
-    { n: "鏡", t: "거울 회랑", it: ["mirror", "mirror", "mirror"] },
-    { n: "庭", t: "꿈의 정원", it: ["flowers", "tree", "flowers"] } ] },
   avallach: { shape: "outdoor", w: 640, g: 2, floors: [
     { n: "林", t: "사과나무 길", it: ["apple", "apple", "apple"] },
     { n: "舍", t: "오두막", it: ["table", "teapot", "bed"], who: ["비비안"] },
     { n: "湖", t: "고요한 호수", it: ["water"] } ] },
-  pier: { shape: "outdoor", w: 600, g: 2, floors: [
+  pier: { shape: "outdoor", w: 600, g: 2, water: true, floors: [
     { n: "上", t: "선착장", it: ["crate", "boat", "post"], who: ["지오"] },
     { n: "水", t: "대운하 물길", it: ["water"] } ] },
-  "bell-tower": { shape: "tower", w: 300, roof: "spire", g: 1, flooded: true, floors: [
-    { n: "鐘", t: "종루", it: ["bell"], who: ["청류"] },
-    { n: "階", t: "물에 잠긴 계단", it: ["stairs"] },
-    { n: "村", t: "잠긴 마을", it: ["ruin", "ruin"] } ] },
-  abyss: { shape: "outdoor", w: 560, g: 0, floors: [
+  abyss: { shape: "outdoor", w: 560, g: 0, water: true, floors: [
     { n: "水", t: "심연의 입구", it: ["water"] },
     { n: "深", t: "푸른 잠자리", it: ["shell", "water"], who: ["멜뤼진"] } ] },
-  "glass-tower": { shape: "tower", w: 280, roof: "glass", g: 3, glass: true, floors: [
-    { n: "頂", t: "꼭대기 서재", it: ["shelf", "desk"], who: ["멀린"] },
-    { n: "空", t: "편지의 하늘", it: ["letters", "flyletters"] },
-    { n: "螺", t: "나선 계단", it: ["stairs"] } ] },
-  "herb-shop": { shape: "house", w: 460, g: 2, floors: [
-    { n: "2F", t: "약초 건조대", it: ["herbs", "jars", "herbs"] },
-    { n: "1F", t: "가게 카운터", it: ["jars", "counter", "cauldron"], who: ["셀윈"] } ],
-    wing: { side: "right", t: "뒷마당 밭", it: ["flowers", "plant"] } },
-  greenhouse: { shape: "dome", w: 520, g: 2, broken: true, floors: [
-    { n: "頂", t: "깨진 유리 지붕", it: ["vine", "vine"] },
-    { n: "1F", t: "시든 화단 · 녹슨 도구함", it: ["wilted", "chest", "wilted"], who: ["나르기스"] } ] },
   "golden-garden": { shape: "outdoor", w: 600, g: 2, floors: [
     { n: "樹", t: "황금 사과나무", it: ["goldtree"], who: ["헤스페리데스"] },
     { n: "池", t: "노을의 연못", it: ["water"] } ] },
-  arena: { shape: "hall", w: 620, g: 2, roof: "arena", floors: [
-    { n: "上", t: "주인석 · 관중석", it: ["bench", "throne", "bench"], who: ["페트라"] },
-    { n: "場", t: "결투장 · 대기실", it: ["target", "sword", "bench"], who: ["레아"] } ] },
   "spear-hill": { shape: "outdoor", w: 600, g: 2, floors: [
     { n: "風", t: "창의 숲", it: ["spears", "spears"], who: ["힐드"] },
     { n: "塚", t: "이름 없는 돌무덤", it: ["cairn"] } ] },
   crater: { shape: "cliff", w: 600, g: 9, volcanic: true, floors: [
     { n: "火", t: "화구 가장자리", it: ["fire", "fire"], who: ["이프리트"] },
     { n: "石", t: "제물의 바위", it: ["anvil", "rock"] } ] },
-  "storm-watch": { shape: "tower", w: 300, roof: "ruin", g: 9, floors: [
-    { n: "頂", t: "무너진 망루", it: ["cloud"], who: ["휘린"] },
-    { n: "階", t: "번개 자국 계단", it: ["stairs"] },
-    { n: "地", t: "풀밭", it: ["flowers"] } ] },
-  "garuda-tower": { shape: "tower", w: 300, roof: "spire", g: 9, floors: [
-    { n: "頂", t: "탑 꼭대기 (금역)", it: ["nest"], who: ["가루다"] },
-    { n: "羽", t: "깃털의 계단", it: ["stairs", "feather"] } ] },
-  "closed-door": { shape: "shaft", w: 520, g: 0, floors: [
-    { n: "▽", t: "금서고 계단", it: ["stairs"] },
-    { n: "▽", t: "빈 홈", it: ["pillar", "pillar"] },
-    { n: "門", t: "돌문 앞", it: ["bigdoor"], who: ["네페르"] } ] },
-  "deep-bottom": { shape: "shaft", w: 520, g: 0, floors: [
-    { n: "▽", t: "하층 갱도", it: ["bones"] },
-    { n: "∞", t: "어둠", it: ["eyes"], who: ["니드호그"], redact: true } ] },
 };
 
 // ── 가구 (밑변 가운데 x, 바닥 y 기준) ──
@@ -283,189 +288,421 @@ const IT = {
   eyes: (x, y) => `<ellipse cx="${x - 30}" cy="${y - 50}" rx="10" ry="4" fill="#e8c84a"/><ellipse cx="${x + 30}" cy="${y - 50}" rx="10" ry="4" fill="#e8c84a"/><path d="M${x - 30},${y - 54} v8 M${x + 30},${y - 54} v8" stroke="#1c1820" stroke-width="2"/>`,
 };
 
+
 // ── 단면도 그리기 ──
 let uid = 0;
-export function drawSection(site, CHARS, color) {
+const FH = 150, SL = 20, WT = 14; // 층 높이, 층 사이 바닥판, 벽 두께
+const EDGE = `stroke="rgba(44,32,21,.55)" stroke-width="1.4"`;
+const INNER = { marble: "#f7f2e6", stone: "#ece2cc", brick: "#f2e4ca", timber: "#f4ead2", plank: "#ecd9b6", glass: "#e6f2ee", stripes: "#f3ede0", dream: "#e2e3f4" };
+const ROOFC = { slate: "#565c70", tile: null, copper: "#6f9a8a", glass: "#cfe6ea", gold: "#d9a43a", thatch: "#c9a865" };
+
+function patterns(id, color) {
+  return `<pattern id="${id}marble" width="48" height="24" patternUnits="userSpaceOnUse"><rect width="48" height="24" fill="#eee7d8"/><path d="M0,.5 h48 M0,12.5 h48 M12,0 v12 M36,12 v12" stroke="#c9bea6" stroke-width="1"/></pattern>
+  <pattern id="${id}stone" width="40" height="20" patternUnits="userSpaceOnUse"><rect width="40" height="20" fill="#b9b0a0"/><path d="M0,.5 h40 M0,10.5 h40 M10,0 v10 M30,10 v10" stroke="#857c6c" stroke-width="1.2"/></pattern>
+  <pattern id="${id}brick" width="28" height="14" patternUnits="userSpaceOnUse"><rect width="28" height="14" fill="#b97e5e"/><path d="M0,.5 h28 M0,7.5 h28 M7,0 v7 M21,7 v7" stroke="#7a4630" stroke-width="1"/></pattern>
+  <pattern id="${id}timber" width="44" height="44" patternUnits="userSpaceOnUse"><rect width="44" height="44" fill="#efe3c6"/><path d="M2,0 v44" stroke="#6b4a2e" stroke-width="5"/><path d="M4,44 L44,4" stroke="#6b4a2e" stroke-width="3.5"/><path d="M0,22 h44" stroke="#6b4a2e" stroke-width="3"/></pattern>
+  <pattern id="${id}plank" width="40" height="10" patternUnits="userSpaceOnUse"><rect width="40" height="10" fill="#a2734a"/><path d="M0,.5 h40 M18,0 v10" stroke="#6b4a2e" stroke-width="1"/></pattern>
+  <pattern id="${id}glass" width="26" height="26" patternUnits="userSpaceOnUse"><rect width="26" height="26" fill="#c6e1e4"/><path d="M0,.5 h26 M.5,0 v26" stroke="#6f9499" stroke-width="1.4"/><path d="M5,20 l8,-8" stroke="#fff" stroke-width="1.4" opacity=".7"/></pattern>
+  <pattern id="${id}stripes" width="40" height="72" patternUnits="userSpaceOnUse"><rect width="40" height="36" fill="#f3ede0"/><rect y="36" width="40" height="36" fill="#b8463a"/></pattern>
+  <pattern id="${id}dream" width="40" height="40" patternUnits="userSpaceOnUse"><rect width="40" height="40" fill="#7c86c8"/><path d="M10,10 l2,5 l5,2 l-5,2 l-2,5 l-2,-5 l-5,-2 l5,-2z" fill="#f6f0dc" opacity=".8"/></pattern>
+  <pattern id="${id}tile" width="22" height="14" patternUnits="userSpaceOnUse"><rect width="22" height="14" fill="${color}"/><path d="M0,14 a11,9 0 0 1 22,0" fill="none" stroke="rgba(0,0,0,.28)" stroke-width="1.4"/></pattern>
+  <pattern id="${id}slate" width="18" height="12" patternUnits="userSpaceOnUse"><rect width="18" height="12" fill="#565c70"/><path d="M0,11.5 h18 M9,0 v12" stroke="#3a3e4e" stroke-width="1"/></pattern>
+  <pattern id="${id}copper" width="20" height="40" patternUnits="userSpaceOnUse"><rect width="20" height="40" fill="#6f9a8a"/><path d="M.5,0 v40" stroke="#4d7466" stroke-width="1.6"/></pattern>
+  <pattern id="${id}gold" width="16" height="16" patternUnits="userSpaceOnUse"><rect width="16" height="16" fill="#d9a43a"/><path d="M0,15.5 h16" stroke="#a87a22" stroke-width="1"/></pattern>
+  <pattern id="${id}thatch" width="12" height="30" patternUnits="userSpaceOnUse"><rect width="12" height="30" fill="#c9a865"/><path d="M3,0 l-2,30 M8,0 l1,30" stroke="#957a3e" stroke-width="1.2"/></pattern>
+  <pattern id="${id}e" width="40" height="30" patternUnits="userSpaceOnUse"><rect width="40" height="30" fill="#c8b38a"/><circle cx="8" cy="8" r="2.4" fill="#8f7a58"/><circle cx="28" cy="20" r="3" fill="#8f7a58"/><path d="M14,24 l6,-3 M30,6 l5,2" stroke="#6a5a40" stroke-width="1.2"/></pattern>
+  <pattern id="${id}w" width="40" height="16" patternUnits="userSpaceOnUse"><rect width="40" height="16" fill="#a9c9d3"/><path d="M0,8 q10,-6 20,0 t20,0" fill="none" stroke="#5f8fa3" stroke-width="1.4"/></pattern>`;
+}
+
+// 방 안쪽 모양 (천장 형태)
+function roomPath({ x, y, w, h }, ceil) {
+  const b = y + h;
+  switch (ceil) {
+    case "arch": { const r = Math.min(w * 0.16, h * 0.28); return `M${x},${b} V${y + r} A${w / 2},${r} 0 0 1 ${x + w},${y + r} V${b}Z`; }
+    case "vault": { const r = Math.min(w * 0.1, h * 0.2); return `M${x},${b} V${y + r} A${w / 2},${r} 0 0 1 ${x + w},${y + r} V${b}Z`; }
+    case "gothic": { const r = Math.min(h * 0.42, w * 0.32); return `M${x},${b} V${y + r} Q${x + w * 0.06},${y + r * 0.2} ${x + w / 2},${y} Q${x + w * 0.94},${y + r * 0.2} ${x + w},${y + r} V${b}Z`; }
+    case "dome": { const r = Math.min(h * 0.5, w * 0.45); return `M${x},${b} V${y + r} A${w / 2},${r} 0 0 1 ${x + w},${y + r} V${b}Z`; }
+    case "attic": return `M${x},${b} V${y + h * 0.5} L${x + w * 0.24},${y} H${x + w * 0.76} L${x + w},${y + h * 0.5} V${b}Z`;
+    default: return `M${x},${y} H${x + w} V${b} H${x}Z`;
+  }
+}
+const ceilRise = (r, c) => ({ arch: Math.min(r.w * 0.16, r.h * 0.28), vault: Math.min(r.w * 0.1, r.h * 0.2), gothic: Math.min(r.h * 0.42, r.w * 0.32), dome: Math.min(r.h * 0.5, r.w * 0.45), attic: r.h * 0.3 }[c] || 0);
+
+// 곧은 계단 한 줄 (x0에서 시작해 dir 방향으로 오른다)
+function flight(x0, yb, yt, SW, dir) {
+  const n = 9, run = SW / n, rise = (yb - yt) / n;
+  const X = (d) => x0 + dir * d;
+  let d = `M${X(0)},${yb}`;
+  for (let k = 0; k < n; k++) d += ` V${yb - rise * (k + 1)} H${X(run * (k + 1))}`;
+  d += ` V${yt + 18} L${X(16)},${yb}Z`;
+  let o = `<path d="${d}" fill="#9a6e45" stroke="#5a3a20" stroke-width="1.2" stroke-linejoin="round"/>`;
+  for (let k = 0; k < n; k++) o += `<path d="M${X(run * k)},${yb - rise * (k + 1)} H${X(run * (k + 1))}" stroke="#c9a070" stroke-width="2"/>`;
+  // 난간
+  const rail = (k) => [X(run * (k + 0.5)), yb - rise * (k + 1) - 38];
+  o += `<path d="M${rail(0)[0]},${rail(0)[1]} L${rail(n - 1)[0]},${rail(n - 1)[1]}" stroke="#5a3a20" stroke-width="3" stroke-linecap="round"/>`;
+  for (let k = 0; k < n; k += 2) o += `<path d="M${X(run * (k + 0.5))},${yb - rise * (k + 1)} v-38" stroke="#5a3a20" stroke-width="1.4"/>`;
+  o += `<path d="M${X(run * 0.5)},${yb - rise} v-46" stroke="#5a3a20" stroke-width="4"/><circle cx="${X(run * 0.5)}" cy="${yb - rise - 48}" r="3.5" fill="#5a3a20"/>`;
+  return o;
+}
+// 나선 계단 한 층 분량 (기둥을 감고 오른다)
+function spiral(cx, yb, yt, Wd = 70) {
+  const n = 8, rise = (yb - yt) / n;
+  let o = `<rect x="${cx - 4}" y="${yt}" width="8" height="${yb - yt}" fill="#7a5a3a"/>`;
+  for (let k = 0; k < n; k++) {
+    const y = yb - rise * (k + 1), left = k % 2 === 0;
+    const xa = left ? cx - Wd / 2 : cx + Wd / 2;
+    o += `<path d="M${cx},${y + 4} L${xa},${y} L${xa},${y + 7} L${cx},${y + 10}Z" fill="${k % 4 < 2 ? "#a77a4f" : "#8a6440"}" stroke="#5a3a20" stroke-width="1"/>`;
+  }
+  let d = `M${cx - Wd / 2},${yb - 30}`;
+  for (let k = 0; k < n; k++) { const y = yb - rise * (k + 1) - 30; d += ` Q${cx},${y + rise / 2 + (k % 2 ? -8 : 8)} ${k % 2 ? cx - Wd / 2 : cx + Wd / 2},${y}`; }
+  return o + `<path d="${d}" fill="none" stroke="#5a3a20" stroke-width="2.4"/>`;
+}
+
+// 지붕
+function roof(spec, r, id, color, attic) {
+  const [type, mat = "tile"] = spec.split(":");
+  const fill = mat === "tile" ? `url(#${id}tile)` : `url(#${id}${mat})`;
+  const x = r.x, w = r.w, M = x + w / 2;
+  const L = x - WT - 16, R = x + w + WT + 16, T = r.y - SL / 2;
+  const sh = `<path d="__" fill="rgba(0,0,0,.18)" transform="translate(5,6)"/>`;
+  const shape = (d, f = fill) => sh.replace("__", d) + `<path d="${d}" fill="${f}" ${EDGE} stroke-linejoin="round"/>`;
+  if (attic) {
+    // 다락: 지붕이 방을 감싼다
+    const b = r.y + r.h * 0.5 + 8;
+    if (type === "mansard") return shape(`M${x - 30},${b} L${x + w * 0.2 - 14},${r.y - 18} L${M},${r.y - 52} L${x + w * 0.8 + 14},${r.y - 18} L${x + w + 30},${b}Z`) +
+      [x + w * 0.12, x + w * 0.88].map((dx) => `<path d="M${dx - 18},${r.y + r.h * 0.34} v-26 l18,-16 l18,16 v26z" fill="#f4e9cd" ${EDGE}/><rect x="${dx - 9}" y="${r.y + r.h * 0.34 - 22}" width="18" height="18" fill="#cfe0e6"/>`).join("");
+    if (type === "gambrel") return shape(`M${x - 30},${b} L${x + w * 0.1 - 10},${r.y + 4} L${M},${r.y - 64} L${x + w * 0.9 + 10},${r.y + 4} L${x + w + 30},${b}Z`);
+    if (type === "thatch") return shape(`M${x - 46},${b + 6} C${x - 24},${r.y - 20} ${x + w * 0.22},${r.y - 86} ${M},${r.y - 90} C${x + w * 0.78},${r.y - 86} ${x + w + 24},${r.y - 20} ${x + w + 46},${b + 6} Q${M},${b - 10} ${x - 46},${b + 6}Z`, `url(#${id}thatch)`);
+    return shape(`M${x - 32},${b} L${M},${r.y - 96} L${x + w + 32},${b}Z`);
+  }
+  switch (type) {
+    case "gable": return shape(`M${L},${T} L${M},${T - Math.min(w * 0.42, 130)} L${R},${T}Z`);
+    case "pointed": return shape(`M${L},${T} L${M},${T - w * 0.8} L${R},${T}Z`) + `<path d="M${M},${T - w * 0.8} v-24" stroke="#5a3a20" stroke-width="3"/>`;
+    case "spires": {
+      const H = w * 0.95;
+      let s = shape(`M${x + w * 0.18},${T} L${M},${T - H} L${x + w * 0.82},${T}Z`);
+      for (const px of [x + 6, x + w - 6]) s += shape(`M${px - 22},${T} L${px},${T - H * 0.6} L${px + 22},${T}Z`) + `<rect x="${px - 22}" y="${T - 4}" width="44" height="8" fill="url(#${id}stone)"/>`;
+      return s + `<path d="M${M},${T - H} v-22 m-8,8 h16" stroke="#c8a050" stroke-width="3"/>`;
+    }
+    case "spire": case "sun": {
+      const H = w * 0.95;
+      let s = shape(`M${L + 10},${T} L${M},${T - H} L${R - 10},${T}Z`);
+      for (let k = 1; k < 6; k++) { const t = k / 6; s += `<circle cx="${L + 10 + (M - L - 10) * t - 5}" cy="${T - H * t}" r="4" fill="${ROOFC[mat] || color}" ${EDGE}/><circle cx="${R - 10 - (R - 10 - M) * t + 5}" cy="${T - H * t}" r="4" fill="${ROOFC[mat] || color}" ${EDGE}/>`; }
+      if (type === "sun") {
+        s += `<circle cx="${M}" cy="${T - H - 30}" r="26" fill="#f0c95a" ${EDGE}/><circle cx="${M}" cy="${T - H - 30}" r="14" fill="none" stroke="#a87a22" stroke-width="1.4"/>`;
+        for (let i = 0; i < 16; i++) { const a = (i / 16) * 6.283, L1 = 32, L2 = i % 2 ? 42 : 52; s += `<path d="M${M + Math.cos(a) * L1},${T - H - 30 + Math.sin(a) * L1} L${M + Math.cos(a) * L2},${T - H - 30 + Math.sin(a) * L2}" stroke="#a87a22" stroke-width="2.4"/>`; }
+      } else s += `<path d="M${M},${T - H} v-26 m-9,10 h18" stroke="#5a3a20" stroke-width="3"/>`;
+      return s;
+    }
+    case "conic": {
+      const H = w * 1.15;
+      return shape(`M${L - 6},${T} C${L + (M - L) * 0.45},${T - H * 0.18} ${M - 6},${T - H * 0.7} ${M},${T - H} C${M + 6},${T - H * 0.7} ${R - (R - M) * 0.45},${T - H * 0.18} ${R + 6},${T}Z`) +
+        `<path d="M${M},${T - H} v-30" stroke="#5a3a20" stroke-width="3"/><path d="M${M},${T - H - 30} l22,7 l-22,7z" fill="${color}"/>`;
+    }
+    case "dome": {
+      const H = w * 0.5;
+      let s = shape(`M${L + 6},${T} A${(R - L - 12) / 2},${H} 0 0 1 ${R - 6},${T}Z`);
+      for (let k = 1; k < 6; k++) { const t = k / 6, xx = L + 6 + (R - L - 12) * t; s += `<path d="M${xx},${T} Q${xx + (M - xx) * 0.25},${T - H * Math.sin(t * Math.PI) * 0.9} ${M},${T - H}" fill="none" stroke="rgba(44,32,21,.35)" stroke-width="1.4"/>`; }
+      if (mat === "glass" && w > 400) s += `<path d="M${M},${T - H + 10} v-60" stroke="#8a6440" stroke-width="8"/><path d="M${M},${T - H - 44} c-46,-6 -52,-44 -18,-50 c4,-26 40,-24 40,0 c30,8 22,48 -22,50z" fill="#6f8f4f"/>`;
+      else s += `<rect x="${M - 16}" y="${T - H - 34}" width="32" height="36" fill="#f4e9cd" ${EDGE}/><path d="M${M - 20},${T - H - 34} a20,18 0 0 1 40,0z" fill="${fill}" ${EDGE}/><path d="M${M},${T - H - 52} v-16" stroke="#c8a050" stroke-width="3"/>`;
+      return s;
+    }
+    case "crenel": {
+      let s = "";
+      for (let xx = x - WT; xx < x + w + WT - 10; xx += 38) s += `<rect x="${xx}" y="${T - 26}" width="22" height="28" fill="url(#${id}stone)" ${EDGE}/>`;
+      return s;
+    }
+    case "pediment": {
+      const H = w * 0.17;
+      return `<rect x="${L}" y="${T - 14}" width="${R - L}" height="16" fill="url(#${id}marble)" ${EDGE}/>` + shape(`M${L},${T - 14} L${M},${T - 14 - H} L${R},${T - 14}Z`, `url(#${id}marble)`) +
+        `<circle cx="${M}" cy="${T - 14 - H * 0.42}" r="${H * 0.22}" fill="${color}" ${EDGE}/>` + [L, M, R].map((px) => `<path d="M${px - 8},${px === M ? T - 14 - H : T - 14} l8,-14 l8,14z" fill="#c8a050"/>`).join("");
+    }
+    case "saw": {
+      let s = "", n = Math.max(2, Math.round(w / 110)), tw = (R - L) / n;
+      for (let k = 0; k < n; k++) { const a = L + k * tw; s += shape(`M${a},${T} L${a},${T - 50} L${a + tw},${T}Z`) + `<path d="M${a + 3},${T - 4} V${T - 44}" stroke="#cfe0e6" stroke-width="5"/>`; }
+      return s;
+    }
+    case "glass": {
+      const H = w * 1.25;
+      return shape(`M${L + 4},${T} L${M - 10},${T - H * 0.75} L${M},${T - H} L${M + 10},${T - H * 0.75} L${R - 4},${T}Z`, `url(#${id}glass)`) + `<path d="M${M},${T - H} V${T} M${M - 10},${T - H * 0.75} L${L + 60},${T} M${M + 10},${T - H * 0.75} L${R - 60},${T}" stroke="#6f9499" stroke-width="1.2"/>`;
+    }
+    case "lantern": {
+      const lw = w * 0.82, lx = M - lw / 2;
+      return `<path d="M${M - 150},${T - 50} L${lx},${T - 40} L${lx},${T - 70}Z M${M + 150},${T - 50} L${lx + lw},${T - 40} L${lx + lw},${T - 70}Z" fill="#f6e2a0" opacity=".55"/>` +
+        `<rect x="${L}" y="${T - 10}" width="${R - L}" height="10" fill="#3a3240"/><path d="M${L},${T - 10} v-14 M${R},${T - 10} v-14 M${L},${T - 22} H${R}" stroke="#3a3240" stroke-width="2"/>` +
+        `<path d="M${lx - 10},${T - 90} a${lw / 2 + 10},40 0 0 1 ${lw + 20},0z" fill="#3a3240"/><path d="M${M},${T - 128} v-20" stroke="#3a3240" stroke-width="3"/>`;
+    }
+    case "broken": return shape(`M${L},${T} v-40 l26,16 l18,-36 l22,26 l26,-48 l16,30 l24,-18 l14,22 V${T}Z`, `url(#${id}stone)`) + `<path d="M${M + 20},${T - 90} c-30,-8 -40,-36 -10,-40 c6,-20 36,-16 36,2 c22,2 22,30 -2,34z" fill="#7d7a8c"/><path d="M${M + 14},${T - 80} l-8,16 h10 l-8,18" fill="none" stroke="#e8c84a" stroke-width="3"/>`;
+    case "flat": {
+      let s = `<rect x="${L}" y="${T - 6}" width="${R - L}" height="8" fill="url(#${id}stone)" ${EDGE}/><path d="M${L},${T - 30} H${R}" stroke="#7f7666" stroke-width="4"/>`;
+      for (let xx = L + 8; xx < R; xx += 16) s += `<path d="M${xx},${T - 6} v-24" stroke="#7f7666" stroke-width="3"/>`;
+      return s;
+    }
+    default: return "";
+  }
+}
+
+export function drawSection(site, CHARS, color, isVeiled) {
   const cfg = SEC[site.id];
   if (!cfg) return null;
   const id = "sx" + ++uid;
   const R = rng(site.id);
-  const FH = 140, SL = 12; // 층 높이, 바닥판 두께
+  const shape = cfg.shape;
   const n = cfg.floors.length;
-  const roofH = { tower: 150, manor: 110, ship: 60, dome: 0, terrace: 30, keep: 70, shaft: 0, house: 100, hall: 80, outdoor: 0, cliff: 0 }[cfg.shape];
-  const top = 40 + roofH + (cfg.shape === "manor" ? 10 : 0);
-  const maxW = Math.max(...cfg.floors.map((f) => f.narrow || cfg.w));
-  const CX = 200 + maxW / 2 + ({ cliff: 120, shaft: 50, terrace: 240, ship: 60 }[cfg.shape] || 0);
-  const wingW = cfg.wing ? 260 : 0;
-  // 층 사각형
+  const ext = new Set(cfg.ext || []);
+  const isBuild = shape === "build" || shape === "ship" || shape === "terrace";
+  const widthOf = (f) => f.w || cfg.w || 600;
+  const maxW = Math.max(...cfg.floors.map(widthOf));
+  const margin = (ext.has("cloister") ? 160 : 0) + (ext.has("turrets") ? 90 : 0) + (ext.has("columns") ? 130 : 0) + (ext.has("tiers") ? 150 : 0) + (ext.has("buttress") ? 40 : 0) + (shape === "terrace" ? 170 : 0) + (shape === "cliff" ? 120 : 0) + (shape === "ship" ? 90 : 0) + (shape === "shaft" ? 50 : 0);
+  const CX = 150 + margin + maxW / 2;
+  const f0 = cfg.floors[0], w0 = widthOf(f0);
+  const rt = (f0.roof || "").split(":")[0];
+  const roofSpace = { sun: w0 * 0.95 + 90, spire: w0 * 0.95 + 40, conic: w0 * 1.15 + 50, glass: w0 * 1.25 + 20, dome: w0 * 0.5 + 80, spires: w0 * 0.95 + 40, pointed: w0 * 0.8 + 40, gable: 140, lantern: 150, broken: 110, pediment: 110 }[rt] ?? (f0.ceil === "attic" ? 110 : 60);
+  const top = 40 + (isBuild || shape === "shaft" ? roofSpace : 30);
   const rects = cfg.floors.map((f, i) => {
-    let w = f.narrow || cfg.w;
-    let x = CX - w / 2;
-    if (cfg.shape === "terrace") { w = cfg.w; x = CX - 300 + (n - 1 - i) * 70 - 60; }
-    if (cfg.shape === "ship" && i === n - 1) { w = cfg.w * 0.82; x = CX - w / 2; }
-    if (cfg.shape === "dome" && i === 0 && cfg.g > 0) { w = cfg.w * 0.72; x = CX - w / 2; }
-    return { x, y: top + i * (FH + SL) - (f.dream ? 0 : 0), w, h: FH };
+    const w = widthOf(f);
+    let x = CX - w / 2 + (f.dx || 0);
+    if (shape === "terrace") x = CX - 170 + (n - 1 - i) * 85 - w / 2;
+    return { x, y: top + i * (FH + SL), w, h: FH };
   });
-  if (cfg.shape === "manor") rects.slice(1).forEach((r) => (r.y += 110));
-  const rightMost = Math.max(...rects.map((r) => r.x + r.w)) + ({ cliff: 140, ship: 130, shaft: 70, outdoor: 50 }[cfg.shape] || 40);
-  const VW = rightMost + (cfg.wing ? wingW + 30 : 20);
+  if (cfg.float) rects.slice(cfg.float).forEach((r) => (r.y += 130));
+  const wingW = cfg.wing ? 270 : 0;
+  const right = Math.max(...rects.map((r) => r.x + r.w)) + WT + margin * (shape === "terrace" ? 0 : 1) + (shape === "ship" ? 40 : 0) + 30;
+  const VW = Math.max(right + (cfg.wing ? wingW + 30 : 10), CX + maxW / 2 + 60);
   const groundY = cfg.g >= n ? rects[n - 1].y + FH + SL : rects[cfg.g].y - SL / 2;
   const VH = rects[n - 1].y + FH + SL + 70;
+  const dark = cfg.dark || shape === "shaft";
+  const sky = dark ? "#2a2738" : cfg.night ? "#262c4a" : "#e9dfc6";
+  const wallOf = (f) => f.wall || cfg.wall || "stone";
 
-  let o = `<svg class="section" viewBox="0 0 ${VW} ${VH}" xmlns="http://www.w3.org/2000/svg">`;
-  o += `<defs><pattern id="${id}h" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="10" height="10" fill="${P2}"/><path d="M0,0 v10" stroke="${K}" stroke-width="1.6"/></pattern>
-    <pattern id="${id}e" width="40" height="30" patternUnits="userSpaceOnUse"><rect width="40" height="30" fill="#c8b38a"/><circle cx="8" cy="8" r="2.4" fill="#8f7a58"/><circle cx="28" cy="20" r="3" fill="#8f7a58"/><path d="M14,24 l6,-3 M30,6 l5,2" stroke="#6a5a40" stroke-width="1.2"/></pattern>
-    <pattern id="${id}w" width="40" height="16" patternUnits="userSpaceOnUse"><rect width="40" height="16" fill="#a9c9d3"/><path d="M0,8 q10,-6 20,0 t20,0" fill="none" stroke="#5f8fa3" stroke-width="1.4"/></pattern></defs>`;
-  // 배경: 하늘 / 땅 / 물
-  const shape = cfg.shape;
-  const sky = shape === "shaft" || cfg.dark ? "#2a2738" : site.id === "glass-tower" ? "#262c4a" : "#e9dfc6";
-  o += `<rect width="${VW}" height="${VH}" fill="${sky}"/>`;
-  if (shape !== "shaft" && !cfg.dark) for (let i = 0; i < 6; i++) o += `<path d="M${60 + R() * (VW - 200)},${30 + R() * Math.max(groundY - 120, 30)} q10,-8 20,0 q8,-10 22,0 q12,-4 14,4" fill="none" stroke="${K}" stroke-width="1" opacity=".35"/>`;
+  let o = `<svg class="section" viewBox="0 0 ${VW} ${VH}" xmlns="http://www.w3.org/2000/svg"><defs>${patterns(id, color)}<filter id="${id}b"><feGaussianBlur stdDeviation="5"/></filter><filter id="${id}d" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="2" dy="3" stdDeviation="1.6" flood-color="#2c2015" flood-opacity=".3"/></filter></defs>`;
+  o += `<rect x="-3000" y="-3000" width="${VW + 6000}" height="${VH + 6000}" fill="${sky}"/>`;
+  if (!dark) for (let i = 0; i < 6; i++) { const cx = 60 + R() * (VW - 200), cy = 40 + R() * Math.max(groundY - 160, 30); o += `<path d="M${cx},${cy} q12,-12 26,-4 q10,-14 28,-2 q16,-2 16,10 h-70z" fill="${cfg.night ? "#3a4170" : "#f6f0e2"}" opacity=".8"/>`; }
+  if (cfg.night) for (let i = 0; i < 30; i++) o += `<circle cx="${R() * VW}" cy="${R() * groundY}" r="${1 + R() * 1.6}" fill="#f6f0dc" opacity=".8"/>`;
+  // 땅 / 물
   if (groundY < VH) {
-    const below = cfg.flooded || site.id === "abyss" || site.id === "pier" || site.id === "flumen" ? `url(#${id}w)` : `url(#${id}e)`;
-    o += `<rect x="0" y="${groundY}" width="${VW}" height="${VH - groundY}" fill="${below}"/>`;
-    o += `<path d="M0,${groundY} ${Array.from({ length: 14 }, (_, i) => `L${f1(((i + 1) / 14) * VW)},${f1(groundY + (R() - 0.5) * 6)}`).join(" ")}" fill="none" stroke="${K}" stroke-width="3"/>`;
-    if (below.includes("e")) for (let x = 20; x < VW; x += 26) o += `<path d="M${x},${groundY - 2} l-3,-8 M${x + 6},${groundY - 2} l2,-7" stroke="#5f7d45" stroke-width="1.6"/>`;
-  }
-  // 산비탈 (계단식)
-  if (shape === "terrace") {
-    let d = `M0,${VH}`;
-    [...rects].reverse().forEach((r) => (d += ` L${r.x - 30},${r.y + FH + SL} L${r.x + r.w + 16},${r.y + FH + SL}`));
-    d += ` L${rects[0].x + rects[0].w + 120},${rects[0].y - 20} L${VW},${rects[0].y + 40} V${VH}z`;
-    o += `<path d="${d}" fill="url(#${id}e)" stroke="${K}" stroke-width="3" stroke-linejoin="round"/>`;
-  }
-  // 바깥 장소의 먼 언덕
-  if ((shape === "outdoor" || shape === "cliff") && !cfg.dark) {
-    const gy = Math.min(groundY, VH - 40);
-    o += `<path d="M0,${gy} C${VW * 0.15},${gy - 90} ${VW * 0.3},${gy - 60} ${VW * 0.45},${gy - 30} S${VW * 0.8},${gy - 120} ${VW},${gy - 50} V${gy}z" fill="#d3c8a6" stroke="${K}" stroke-width="1.4" opacity=".8"/>`;
-    o += `<path d="M0,${gy} C${VW * 0.2},${gy - 40} ${VW * 0.5},${gy - 70} ${VW * 0.7},${gy - 26} S${VW * 0.9},${gy - 40} ${VW},${gy - 20} V${gy}z" fill="#bfb38c" stroke="${K}" stroke-width="1.4" opacity=".85"/>`;
-    for (let i = 0; i < 7; i++) { const tx = R() * VW, ty = gy - 10 - R() * 30; o += `<path d="M${f1(tx)},${f1(ty - 26)} l-9,16 h5 l-7,12 h22 l-7,-12 h5z" fill="#7d8a62" stroke="${K}" stroke-width="1"/>`; }
-  }
-  // 바위산/절벽
-  if (shape === "cliff") {
-    const yb = rects[n - 1].y + FH + 30;
-    o += `<path d="M${CX - cfg.w / 2 - 110},${yb + 40} L${CX - cfg.w / 2 - 70},${rects[0].y + 40} L${CX - cfg.w / 2 + 40},${rects[0].y - 30} L${CX + 40},${rects[0].y - 10} L${CX + cfg.w / 2 + 30},${rects[0].y + 20} L${CX + cfg.w / 2 + 120},${yb + 40}z" fill="${cfg.volcanic ? "#8a5a48" : "#c9c1ad"}" stroke="${K}" stroke-width="3.4" stroke-linejoin="round"/>`;
-    for (let i = 0; i < 40; i++) o += `<path d="M${f1(CX - cfg.w / 2 - 40 + R() * (cfg.w + 80))},${f1(rects[0].y + R() * (yb - rects[0].y))} l${f1(6 + R() * 8)},${f1(4 + R() * 6)}" stroke="${K}" stroke-width="1" opacity=".6"/>`;
-    if (cfg.volcanic) o += `<path d="M${CX - 40},${rects[0].y - 10} q10,-50 -10,-90 q30,20 30,60 q10,-30 0,-60 q30,40 20,90" fill="#f2a443" stroke="${K}" stroke-width="1.6"/>`;
-  }
-  // 갱도
-  if (shape === "shaft") {
-    const x0 = CX - cfg.w / 2 - 50, y0 = rects[0].y + (rects[0].w < cfg.w ? FH : -10);
-    o += `<rect x="${x0}" y="${y0}" width="${cfg.w + 100}" height="${VH - y0}" fill="url(#${id}e)" stroke="${K}" stroke-width="3"/>`;
-  }
-  // 바깥 공간(별채)
-  if (cfg.wing) {
-    const wf = cfg.wing, last = rects[Math.min(cfg.g, n) - 1] || rects[n - 1];
-    const wx = wf.side === "right" ? Math.max(...rects.map((r) => r.x + r.w)) + 50 : 40;
-    const wy = last.y + FH - 120;
-    o += `<g class="wing"><path d="M${wx},${last.y + FH} h${wingW - 40}" stroke="${K}" stroke-width="2.4"/>`;
-    if (wf.water) o += `<rect x="${wx}" y="${last.y + FH - 24}" width="${wingW - 40}" height="40" fill="url(#${id}w)"/>`;
-    o += `<text x="${wx + (wingW - 40) / 2}" y="${wy - 6}" text-anchor="middle" class="sec-wing" font-family="Gowun Batang, serif" font-size="19" font-weight="700" fill="${K}">${esc(wf.t)}</text>`;
-    o += `<path d="M${wx + 20},${wy + 6} h${wingW - 80}" stroke="${K}" stroke-width=".8" stroke-dasharray="3 4"/></g>`;
-    rects.wing = { x: wx, y: last.y + FH - FH, w: wingW - 40, h: FH, f: wf };
-  }
-
-  // 지붕
-  const r0 = rects[0];
-  const roof = () => {
-    const L = r0.x - 14, Rr = r0.x + r0.w + 14, M = r0.x + r0.w / 2, T = r0.y - SL;
-    switch (shape) {
-      case "tower":
-        if (cfg.roof === "sun") return `<path d="M${L},${T} L${M},${T - 140} L${Rr},${T}z" fill="${color}" stroke="${K}" stroke-width="3"/><circle cx="${M}" cy="${T - 160}" r="26" fill="#f0c95a" stroke="${K}" stroke-width="2.6"/>` + Array.from({ length: 16 }, (_, i) => { const a = (i / 16) * 6.283; return `<path d="M${f1(M + Math.cos(a) * 32)},${f1(T - 160 + Math.sin(a) * 32)} l${f1(Math.cos(a) * (i % 2 ? 8 : 16))},${f1(Math.sin(a) * (i % 2 ? 8 : 16))}" stroke="${K}" stroke-width="2"/>`; }).join("");
-        if (cfg.roof === "lamp") return `<path d="M${L + 20},${T} L${M},${T - 70} L${Rr - 20},${T}z" fill="#3a3240" stroke="${K}" stroke-width="3"/><path d="M${M},${T - 70} v-24" stroke="${K}" stroke-width="2"/>`;
-        if (cfg.roof === "glass") return `<path d="M${L},${T} L${M},${T - 150} L${Rr},${T}z" fill="#d6ecef" fill-opacity=".5" stroke="${K}" stroke-width="2.4"/><path d="M${M},${T - 150} V${T}" stroke="${K}" stroke-width="1"/>`;
-        if (cfg.roof === "ruin") return `<path d="M${L},${T} v-30 l20,10 l16,-26 l18,20 l20,-34 l14,24 l20,-12 v48z" fill="${STONE}" stroke="${K}" stroke-width="2.6"/>`;
-        return `<path d="M${L},${T} L${M},${T - 130} L${Rr},${T}z" fill="${color}" stroke="${K}" stroke-width="3"/><path d="M${M},${T - 130} v-20" stroke="${K}" stroke-width="2"/>`;
-      case "manor": { const B = rects[1].y - SL, r1 = rects[1]; const l = r1.x - 14, rr = r1.x + r1.w + 14; return `<path d="M${l - 20},${B} L${l + 60},${B - 80} H${rr - 60} L${rr + 20},${B}z" fill="#3c4a7a" stroke="${K}" stroke-width="3"/>` + [l + 120, rr - 160].map((x) => `<path d="M${x},${B - 80} v-26 h22 v26" fill="${P}" stroke="${K}" stroke-width="2"/>`).join("") + Array.from({ length: 6 }, (_, k) => `<path d="M${rr - 40 - k * 34},${B - 84 - k * 22} h30 v8 h-30z" fill="${STONE}" stroke="${K}" stroke-width="1.6"/>`).join(""); }
-      case "house": return `<path d="M${L - 16},${T} L${M},${T - 100} L${Rr + 16},${T}z" fill="${color}" stroke="${K}" stroke-width="3"/><path d="M${Rr - 80},${T - 40} v-60 h26 v40" fill="${P}" stroke="${K}" stroke-width="2.4"/>` + Array.from({ length: 8 }, (_, i) => `<path d="M${f1(L + (i + 1) * ((Rr - L) / 9))},${T - 4} l${i < 4 ? 8 : -8},-12" stroke="${K}" stroke-width="1"/>`).join("");
-      case "hall": if (cfg.roof === "arena") return `<path d="M${L - 30},${T} q${(Rr - L) / 2 + 30},-90 ${Rr - L + 60},0" fill="none" stroke="${K}" stroke-width="3"/>` + [L + 40, Rr - 40].map((x) => `<path d="M${x},${T} v-60" stroke="${K}" stroke-width="2"/><path d="M${x},${T - 60} l18,6 l-18,6" fill="${color}" stroke="${K}" stroke-width="1.4"/>`).join("");
-        return `<path d="M${L - 20},${T} L${M},${T - 80} L${Rr + 20},${T}z" fill="${cfg.dark ? "#45506e" : P}" stroke="${K}" stroke-width="3"/><path d="M${L + 40},${T - 10} L${M},${T - 64} L${Rr - 40},${T - 10}z" fill="none" stroke="${K}" stroke-width="1.2"/><circle cx="${M}" cy="${T - 36}" r="12" fill="${color}" stroke="${K}" stroke-width="1.6"/>`;
-      case "keep": { let s = ""; for (let x = L; x < Rr - 10; x += 28) s += `<rect x="${x}" y="${T - 22}" width="16" height="22" fill="${STONE}" stroke="${K}" stroke-width="2"/>`; return s + `<path d="M${M},${T - 22} v-40" stroke="${K}" stroke-width="2"/><path d="M${M},${T - 62} l24,8 l-24,8z" fill="${color}" stroke="${K}" stroke-width="1.6"/>`; }
-      case "ship": return `<path d="M${M},${T} v-60" stroke="${K}" stroke-width="4"/>` + `<path d="M${M},${T - 60} l30,10 l-30,10z" fill="${color}" stroke="${K}" stroke-width="1.6"/>`;
-      case "terrace": return rects.map((r) => `<path d="M${r.x + r.w - 60},${r.y - SL} v-40 h22 v40" fill="#a8533a" stroke="${K}" stroke-width="2"/><path d="M${r.x + r.w - 49},${r.y - SL - 46} q-6,-12 2,-22 q8,-10 0,-22" fill="none" stroke="#7a6d66" stroke-width="3"/>`).join("");
-      case "dome": {
-        const a = rects[0], b = rects[Math.min(1, n - 1)];
-        const dx = b.x - 14, dw = b.w + 28, dy = b.y + FH;
-        return `<path d="M${dx},${dy} V${a.y + 30} A${dw / 2},${dw / 2.4} 0 0 1 ${dx + dw},${a.y + 30} V${dy}" fill="none" stroke="${K}" stroke-width="3.4"/>` +
-          Array.from({ length: 7 }, (_, i) => `<path d="M${f1(dx + (i + 1) * dw / 8)},${dy} V${f1(a.y + 30 - Math.sin(((i + 1) / 8) * Math.PI) * (dw / 2.4) + 4)}" stroke="${K}" stroke-width="1" opacity=".55"/>`).join("") +
-          (cfg.broken ? "" : `<path d="M${M},${a.y - dw / 2.4 + 30} v-40" stroke="#8a6440" stroke-width="6"/><path d="M${M},${a.y - dw / 2.4 - 6} c-40,-4 -44,-40 -14,-44 c4,-24 36,-22 36,0 c26,6 20,44 -22,44z" fill="#6f8f4f" stroke="${K}" stroke-width="2"/>`);
-      }
-      default: return "";
+    const water = cfg.water || cfg.flooded;
+    o += `<rect x="-3000" y="${groundY}" width="${VW + 6000}" height="${VH - groundY + 3000}" fill="url(#${id}${water ? "w" : "e"})"/>`;
+    if (!water) {
+      o += `<rect x="-3000" y="${groundY - 6}" width="${VW + 6000}" height="10" fill="#7d8f5a"/>`;
+      for (let x = -600; x < VW + 600; x += 22) o += `<path d="M${x},${groundY - 4} l-3,-9 M${x + 7},${groundY - 4} l2,-8" stroke="#5f7d45" stroke-width="1.8"/>`;
     }
-  };
-  if (shape !== "outdoor" && shape !== "cliff") o += roof();
+  }
+  // 바깥 장소 배경 언덕
+  if ((shape === "outdoor" || shape === "cliff") && !dark) {
+    const gy = Math.min(groundY, VH - 40);
+    o += `<path d="M-3000,${gy} L0,${gy} C${VW * 0.15},${gy - 90} ${VW * 0.3},${gy - 60} ${VW * 0.45},${gy - 30} S${VW * 0.8},${gy - 120} ${VW},${gy - 50} C${VW + 200},${gy - 40} ${VW + 400},${gy - 10} ${VW + 600},${gy} L${VW + 3000},${gy}z" fill="#d3c8a6"/>`;
+    o += `<path d="M-3000,${gy} L0,${gy} C${VW * 0.2},${gy - 40} ${VW * 0.5},${gy - 70} ${VW * 0.7},${gy - 26} S${VW * 0.9},${gy - 40} ${VW},${gy - 20} C${VW + 200},${gy - 14} ${VW + 300},${gy} ${VW + 400},${gy} L${VW + 3000},${gy}z" fill="#bfb38c"/>`;
+    for (let i = 0; i < 7; i++) { const tx = R() * VW, ty = gy - 10 - R() * 30; o += `<path d="M${tx},${ty - 26} l-9,16 h5 l-7,12 h22 l-7,-12 h5z" fill="#7d8a62"/>`; }
+  }
+  // 비탈
+  if (shape === "terrace") {
+    let d = `M-3000,${VH + 3000} L-3000,${rects[n - 1].y + FH + SL / 2} L${rects[n - 1].x - 60},${rects[n - 1].y + FH + SL / 2}`;
+    [...rects].reverse().forEach((r) => (d += ` L${r.x - 40},${r.y + FH + SL / 2} L${r.x + r.w + 60},${r.y + FH + SL / 2}`));
+    d += ` L${rects[0].x + rects[0].w + 200},${rects[0].y - 30} L${VW + 3000},${rects[0].y - 30} V${VH + 3000}z`;
+    o += `<path d="${d}" fill="url(#${id}e)"/><path d="${d}" fill="none" stroke="#7d8f5a" stroke-width="6"/>`;
+  }
+  // 절벽
+  if (shape === "cliff") {
+    const yb = rects[n - 1].y + FH + 30, w = cfg.w;
+    o += `<path d="M${CX - w / 2 - 110},${yb + 40} L${CX - w / 2 - 70},${rects[0].y + 40} L${CX - w / 2 + 40},${rects[0].y - 30} L${CX + 40},${rects[0].y - 10} L${CX + w / 2 + 30},${rects[0].y + 20} L${CX + w / 2 + 120},${yb + 40}z" fill="${cfg.volcanic ? "#8a5a48" : "#c9c1ad"}"/>`;
+    for (let i = 0; i < 40; i++) o += `<path d="M${CX - w / 2 - 40 + R() * (w + 80)},${rects[0].y + R() * (yb - rects[0].y)} l${6 + R() * 8},${4 + R() * 6}" stroke="rgba(44,32,21,.45)" stroke-width="1.2"/>`;
+    if (cfg.volcanic) o += `<path d="M${CX - 40},${rects[0].y - 10} q10,-50 -10,-90 q30,20 30,60 q10,-30 0,-60 q30,40 20,90" fill="#f2a443"/>`;
+    // 바위를 깎은 계단
+    for (let i = 0; i < n - 1; i++) { const a = rects[i], b = rects[i + 1]; for (let k = 0; k < 6; k++) o += `<rect x="${a.x + a.w + 8 + (k % 2) * 16}" y="${b.y + b.h - 4 - (k + 1) * ((b.h + SL) / 6)}" width="30" height="${(b.h + SL) / 6}" fill="#a39a86"/>`; }
+  }
+  // 갱도 몸체
+  if (shape === "shaft") {
+    const first = rects[Math.min(cfg.g, n - 1)];
+    o += `<rect x="${CX - cfg.w / 2 - 60}" y="${first.y - SL}" width="${cfg.w + 120}" height="${VH - first.y + 3000}" fill="url(#${id}e)"/>`;
+  }
 
-  // 층
+  // ── 바깥 장식 (건물 뒤) ──
+  const above = rects.filter((_, i) => i < cfg.g);
+  const ground = rects[Math.min(cfg.g, n) - 1];
+  if (isBuild && ext.has("turrets") && ground) {
+    const body = rects.slice(1, cfg.g);
+    const ty = body[0].y - 30, by = ground.y + ground.h + SL / 2;
+    const lx = Math.min(...body.map((r) => r.x)) - WT - 70, rx = Math.max(...body.map((r) => r.x + r.w)) + WT - 10;
+    for (const tx of [lx, rx]) {
+      o += `<rect x="${tx}" y="${ty}" width="80" height="${by - ty}" fill="url(#${id}stone)" ${EDGE}/>`;
+      for (let y = ty + 60; y < by - 40; y += 110) o += `<rect x="${tx + 36}" y="${y}" width="8" height="34" rx="4" fill="#2a2430"/>`;
+      o += `<path d="M${tx - 10},${ty} C${tx + 14},${ty - 30} ${tx + 34},${ty - 90} ${tx + 40},${ty - 120} C${tx + 46},${ty - 90} ${tx + 66},${ty - 30} ${tx + 90},${ty}Z" fill="url(#${id}slate)" ${EDGE}/><path d="M${tx + 40},${ty - 120} v-20" stroke="#5a3a20" stroke-width="3"/>`;
+    }
+  }
+  if (isBuild && ext.has("cloister") && ground) {
+    const ay = ground.y + ground.h + SL / 2, h = 104;
+    for (const side of [-1, 1]) {
+      const x0 = side < 0 ? ground.x - WT - 150 : ground.x + ground.w + WT;
+      o += `<rect x="${x0}" y="${ay - h}" width="150" height="${h}" fill="url(#${id}marble)" ${EDGE}/>`;
+      for (let k = 0; k < 3; k++) o += `<path d="M${x0 + 14 + k * 46},${ay} v-56 a17,17 0 0 1 34,0 v56z" fill="#d8ccb2"/>`;
+      o += side < 0 ? `<path d="M${x0 - 12},${ay - h} L${x0 + 150},${ay - h - 36} V${ay - h}Z" fill="url(#${id}tile)" ${EDGE}/>` : `<path d="M${x0},${ay - h - 36} L${x0 + 162},${ay - h} H${x0}Z" fill="url(#${id}tile)" ${EDGE}/>`;
+    }
+  }
+  if (isBuild && ext.has("columns") && ground) {
+    const ay = ground.y + ground.h + SL / 2, h = ground.h + SL / 2;
+    for (const side of [-1, 1]) {
+      const x0 = side < 0 ? ground.x - WT - 128 : ground.x + ground.w + WT;
+      o += `<rect x="${x0 - 6}" y="${ay - h - 18}" width="140" height="20" fill="url(#${id}marble)" ${EDGE}/>`;
+      for (let k = 0; k < 3; k++) { const cx = x0 + 18 + k * 46; o += `<rect x="${cx - 9}" y="${ay - h}" width="18" height="${h - 10}" fill="#f1ebdd" ${EDGE}/><path d="M${cx - 4},${ay - h + 4} v${h - 18} M${cx + 4},${ay - h + 4} v${h - 18}" stroke="#cfc5b0" stroke-width="1.2"/><rect x="${cx - 13}" y="${ay - h - 2}" width="26" height="8" fill="#e6dcc8"/><rect x="${cx - 12}" y="${ay - 12}" width="24" height="10" fill="#e6dcc8"/>`; }
+      for (let k = 0; k < 3; k++) o += `<rect x="${x0 - 10 - k * 6}" y="${ay - 2 + k * 6}" width="${144 + k * 12}" height="6" fill="#d8ccb2"/>`;
+    }
+  }
+  if (isBuild && ext.has("tiers") && ground) {
+    const ay = ground.y + ground.h + SL / 2;
+    for (const side of [-1, 1]) for (let k = 0; k < 5; k++) {
+      const w = 150 - k * 28, x0 = side < 0 ? ground.x - WT - w : ground.x + ground.w + WT;
+      o += `<rect x="${x0}" y="${ay - (k + 1) * 46}" width="${w}" height="46" fill="url(#${id}stone)" ${EDGE}/>`;
+      if (k % 2 === 0) o += `<circle cx="${x0 + w / 2}" cy="${ay - (k + 1) * 46 - 10}" r="8" fill="#a4372f"/><rect x="${x0 + w / 2 - 9}" y="${ay - (k + 1) * 46 - 4}" width="18" height="6" fill="#a4372f"/>`;
+    }
+  }
+  if (isBuild && ext.has("bridge") && ground) {
+    const by = ground.y + ground.h + SL / 2, wy = groundY + 40;
+    o += `<path d="M${ground.x - WT - 60},${by} H${ground.x + ground.w + WT + 60} V${wy + 30} H${ground.x + ground.w - 40} V${wy} A${ground.w / 2 - 40},${wy - by - 18} 0 0 0 ${ground.x + 40},${wy} V${wy + 30} H${ground.x - WT - 60}Z" fill="url(#${id}stone)" ${EDGE}/>`;
+  }
+  // 층마다의 지붕 (위층이 그 위를 덮는다)
+  rects.forEach((r, i) => { const f = cfg.floors[i]; if (f.roof && isBuild || f.roof && shape === "shaft") o += roof(f.roof, r, id, color, f.ceil === "attic"); });
+  // 버팀벽
+  if (isBuild && ext.has("buttress")) above.forEach((r) => {
+    for (const side of [-1, 1]) {
+      const x0 = side < 0 ? r.x - WT : r.x + r.w + WT;
+      o += `<path d="M${x0},${r.y - SL / 2} L${x0 + side * 18},${r.y + 10} L${x0 + side * 30},${r.y + r.h + SL / 2} L${x0},${r.y + r.h + SL / 2}Z" fill="url(#${id}${wallOf(cfg.floors[0])})" ${EDGE}/>`;
+    }
+  });
+
+  // ── 층 (벽 덩어리 + 방) ──
+  const voidX = CX - 55;
   rects.forEach((r, i) => {
     const f = cfg.floors[i];
-    const under = i >= cfg.g;
-    const outdoor = shape === "outdoor";
-    if (shape === "cliff") {
-      o += `<path d="M${r.x + 10},${r.y + r.h} q-14,-${r.h * 0.6} 20,-${r.h - 10} h${r.w - 60} q34,10 30,${r.h - 10}z" fill="${cfg.volcanic ? "#5a3a32" : "#efe6cf"}" stroke="${K}" stroke-width="2.6"/>`;
-    } else if (outdoor) {
-      if ((f.it || []).includes("water")) o += `<rect x="${r.x + 20}" y="${r.y + 30}" width="${r.w - 40}" height="${r.h - 34}" rx="50" fill="url(#${id}w)" stroke="${K}" stroke-width="2.4"/>`;
-      if (i > 0) o += `<path d="M${r.x - 40},${r.y - SL / 2} h${r.w + 80}" stroke="${K}" stroke-width="1" stroke-dasharray="6 6" opacity=".6"/>`;
-    } else {
-      // 단면 벽(빗금) + 내부
-      o += `<rect x="${r.x - 14}" y="${r.y - SL}" width="${r.w + 28}" height="${r.h + SL * 2}" fill="url(#${id}h)" stroke="${K}" stroke-width="3"/>`;
-      const inner = f.redact ? "#1d1a22" : f.dream ? "#d9dcef" : cfg.dark ? "#4a4b66" : cfg.glass ? "#d6ecef" : shape === "shaft" ? "#e3d6b8" : i % 2 ? P : "#efe2c4";
-      o += `<rect x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" fill="${inner}" stroke="${K}" stroke-width="1.4"/>`;
-      if (!f.redact) {
-        // 벽지 결
-        for (let x = r.x + 24; x < r.x + r.w; x += 34) o += `<path d="M${x},${r.y + 6} v${r.h - 12}" stroke="${K}" stroke-width=".6" opacity=".14"/>`;
-        o += `<path d="M${r.x},${r.y + r.h - 4} h${r.w}" stroke="${K}" stroke-width="1" opacity=".5"/>`;
-        if (shape === "shaft" && i > 0 && f.n !== "▽") {
-          const vx = r.x + r.w / 2;
-          o += `<rect x="${vx - 50}" y="${r.y}" width="100" height="${r.h}" fill="#141019"/>`;
-          o += `<path d="M${vx - 50},${r.y + r.h - 20} L${vx + 50},${r.y + 20}" stroke="#d7b25a" stroke-width="1.4" stroke-dasharray="4 4" opacity=".7"/>`;
-        }
-        // 계단 (층 사이를 잇는 사선)
-        if (i < n - 1 && shape !== "terrace" && shape !== "outdoor") {
-          const sx = i % 2 ? r.x + 18 : r.x + r.w - 70;
-          for (let k = 0; k < 5; k++) o += `<path d="M${sx + k * 10},${r.y + r.h - k * 7} h10 v-7" fill="none" stroke="${K}" stroke-width="1.2" opacity=".55"/>`;
-        }
-      } else {
-        o += `<text x="${r.x + r.w / 2}" y="${r.y + r.h / 2 + 8}" text-anchor="middle" font-family="IM Fell English SC, serif" font-size="26" letter-spacing="6" fill="#d8c8a0">CLASSIFIED</text>`;
-        o += `<path d="M${r.x + 20},${r.y + 20} L${r.x + r.w - 20},${r.y + r.h - 20} M${r.x + r.w - 20},${r.y + 20} L${r.x + 20},${r.y + r.h - 20}" stroke="#d8c8a0" stroke-width="1" opacity=".3"/>`;
-      }
+    if (shape === "outdoor") {
+      if ((f.it || []).includes("water")) o += `<rect x="${r.x + 20}" y="${r.y + 30}" width="${r.w - 40}" height="${r.h - 34}" rx="50" fill="url(#${id}w)"/>`;
+      if (i > 0 && i !== cfg.g) o += `<path d="M${r.x - 40},${r.y - SL / 2} h${r.w + 80}" stroke="rgba(44,32,21,.35)" stroke-width="1" stroke-dasharray="6 6"/>`;
+      return;
     }
-    if (shape === "ship" && i === n - 1) o += `<path d="M${r.x - 60},${r.y - SL} H${r.x + r.w + 60} L${r.x + r.w},${r.y + r.h + SL} H${r.x}z" fill="none" stroke="${K}" stroke-width="3.4"/><path d="M${r.x - 120},${r.y + 6} H${r.x + r.w + 120}" stroke="#5f8fa3" stroke-width="2" stroke-dasharray="10 6"/>`;
+    if (shape === "cliff") { o += `<path d="M${r.x + 10},${r.y + r.h} q-14,-${r.h * 0.6} 20,-${r.h - 10} h${r.w - 60} q34,10 30,${r.h - 10}z" fill="${cfg.volcanic ? "#5a3a32" : "#efe6cf"}"/>`; return; }
+    const wall = wallOf(f);
+    const attic = f.ceil === "attic" && f.roof;
+    if (!attic) o += `<rect x="${r.x - WT}" y="${r.y - SL / 2}" width="${r.w + WT * 2}" height="${r.h + SL}" fill="url(#${id}${wall})" ${f.dream ? "" : EDGE}/>`;
+    else o += `<rect x="${r.x - WT}" y="${r.y + r.h * 0.5}" width="${r.w + WT * 2}" height="${r.h * 0.5 + SL / 2}" fill="url(#${id}${wall})" ${EDGE}/>`;
+    if (f.dream) o += [0, 1, 2, 3].map((k) => `<path d="M${r.x - 60 + k * (r.w / 3 + 20)},${r.y + r.h + SL / 2 + 10} q-30,-6 -18,-26 q22,-16 44,-2 q30,-16 50,6 q20,4 6,22z" fill="#fbf8ef"/>`).join("");
+    const inner = f.redact ? "#1d1a22" : cfg.dark ? "#4a4b66" : INNER[wall] || "#efe2c4";
+    o += `<path d="${roomPath(r, f.ceil)}" fill="${inner}"/>`;
+    if (!f.redact) {
+      // 걸레받이·바닥 널
+      o += `<rect x="${r.x}" y="${r.y + r.h - 20}" width="${r.w}" height="16" fill="rgba(90,58,32,.13)"/><rect x="${r.x}" y="${r.y + r.h - 4}" width="${r.w}" height="4" fill="#8a6440"/>`;
+      if (!f.ceil || f.ceil === "flat") for (let x = r.x + 30; x < r.x + r.w - 10; x += 60) o += `<rect x="${x - 6}" y="${r.y}" width="12" height="9" fill="rgba(90,58,32,.35)"/>`;
+    } else {
+      o += `<text x="${r.x + r.w / 2}" y="${r.y + r.h / 2 + 10}" text-anchor="middle" font-family="IM Fell English SC, serif" font-size="26" letter-spacing="6" fill="#d8c8a0">CLASSIFIED</text>`;
+    }
+    if (shape === "shaft" && i >= cfg.g && !f.end && !f.redact) o += `<rect x="${voidX}" y="${r.y}" width="110" height="${r.h}" fill="#141019"/>`;
   });
-  if (cfg.flooded) o += `<rect x="0" y="${rects[0].y + FH + SL}" width="${VW}" height="${VH}" fill="#7fa7b5" opacity=".35"/>`;
-  if (cfg.fog) for (let i = 0; i < 8; i++) o += `<path d="M${f1(R() * VW)},${f1(60 + R() * (VH - 120))} q40,-14 80,0 q40,14 80,0" fill="none" stroke="#fbf8ef" stroke-width="12" stroke-linecap="round" opacity=".6"/>`;
-  if (cfg.shape === "manor") o += [0, 1, 2].map((k) => `<path d="M${rects[0].x - 40 + k * 260},${rects[0].y + FH + 14} q-30,-6 -20,-24 q20,-14 40,-2 q30,-14 46,6 q18,4 4,20z" fill="#fbf8ef" stroke="${K}" stroke-width="1.6"/>`).join("");
+  // 배 선체
+  if (shape === "ship") {
+    const r = rects[n - 1], y0 = r.y - SL / 2, y1 = r.y + r.h + SL / 2 + 20;
+    const hull = `M${r.x - 90},${y0} H${r.x + r.w + 110} Q${r.x + r.w + 70},${y1} ${r.x + r.w - 40},${y1} H${r.x + 40} Q${r.x - 60},${y1} ${r.x - 90},${y0}Z M${r.x},${r.y + 20} V${r.y + r.h} H${r.x + r.w} V${r.y + 20}Z`;
+    o += `<path d="${hull}" fill="url(#${id}plank)" fill-rule="evenodd" ${EDGE}/>`;
+    for (let x = r.x + 40; x < r.x + r.w; x += 90) o += `<circle cx="${x}" cy="${y1 - 22}" r="8" fill="#cfe0e6" stroke="#6b4a2e" stroke-width="3"/>`;
+    o += `<rect x="-3000" y="${groundY}" width="${VW + 6000}" height="14" fill="#a9c9d3" opacity=".7"/>`;
+    if (ext.has("rigging")) { const t = rects[0]; o += `<path d="M${t.x + t.w / 2},${t.y - 160} L${r.x - 80},${y0} M${t.x + t.w / 2},${t.y - 160} L${r.x + r.w + 100},${y0}" stroke="#5a3a20" stroke-width="1.6"/>`; }
+  }
+  // 겹친 처마 받침
+  if (ext.has("jetty")) for (let i = 0; i < n - 1; i++) {
+    const a = rects[i], b = rects[i + 1];
+    if (a.w > b.w + 10 && i < cfg.g) for (const [x1, s] of [[b.x - WT, -1], [b.x + b.w + WT, 1]]) o += `<path d="M${x1},${a.y + a.h + SL / 2} h${s * ((a.w - b.w) / 2)} L${x1},${a.y + a.h + SL / 2 + 26}Z" fill="#6b4a2e"/>`;
+  }
+  // 굴뚝·시계·차양·간판
+  const topR = rects[cfg.float || 0];
+  // 지붕에서 꿈층으로 떠오르는 돌계단
+  if (cfg.float) { const d = rects[0], b = rects[cfg.float]; for (let k = 0; k < 7; k++) { const t = k / 6; o += `<rect x="${d.x + d.w - 40 + 90 * Math.sin(t * 3)}" y="${b.y - 40 - (b.y - 40 - d.y - d.h - 30) * t}" width="46" height="12" rx="3" fill="url(#${id}stone)" opacity="${0.55 + t * 0.45}"/>`; } }
+  if (ext.has("chimney")) { const tf = cfg.floors[cfg.float || 0], r = topR; const cx = r.x + r.w * 0.78; const cy = r.y - (tf.ceil === "attic" ? 40 : 60); o += `<rect x="${cx}" y="${cy - 50}" width="30" height="80" fill="url(#${id}brick)" ${EDGE}/><rect x="${cx - 4}" y="${cy - 56}" width="38" height="8" fill="#7a4630"/><path d="M${cx + 15},${cy - 62} q-12,-16 4,-28 q14,-12 0,-26" fill="none" stroke="#9a948c" stroke-width="5" stroke-linecap="round" opacity=".7"/>`; }
+  if (ext.has("clock")) { const cx = topR.x + topR.w / 2, cy = topR.y - 4; o += `<circle cx="${cx}" cy="${cy}" r="26" fill="#f4e9cd" stroke="#c8a050" stroke-width="5"/><path d="M${cx},${cy} v-16 M${cx},${cy} l11,6" stroke="#2c2015" stroke-width="2.6" stroke-linecap="round"/>`; }
+  if (ext.has("awning") && ground) { const ax = ground.x + ground.w + WT, ay = ground.y + 30; for (let k = 0; k < 5; k++) o += `<path d="M${ax + k * 16},${ay} h16 l6,40 h-16z" fill="${k % 2 ? "#f4e9cd" : color}"/>`; }
+  if (ext.has("sign") && ground) { const sx = ground.x - WT, sy = ground.y + 24; o += `<path d="M${sx},${sy} h-70" stroke="#3a2a1c" stroke-width="5"/><path d="M${sx - 64},${sy} v12 M${sx - 22},${sy} v12" stroke="#3a2a1c" stroke-width="2"/><rect x="${sx - 72}" y="${sy + 12}" width="58" height="40" rx="4" fill="${color}"/><text x="${sx - 43}" y="${sy + 39}" text-anchor="middle" font-family="Cinzel, serif" font-size="15" fill="#f4e9cd">VII</text>`; }
+  if (cfg.flooded) o += `<rect x="-3000" y="${rects[0].y + FH + SL}" width="${VW + 6000}" height="${VH + 3000}" fill="#7fa7b5" opacity=".33"/>`;
+  if (cfg.fog) for (let i = 0; i < 8; i++) o += `<path d="M${R() * VW},${60 + R() * (VH - 120)} q40,-14 80,0 q40,14 80,0" fill="none" stroke="#fbf8ef" stroke-width="12" stroke-linecap="round" opacity=".45"/>`;
 
-  // 가구와 인물
+  // ── 계단 ──
+  const stairZone = {};
+  if (isBuild && cfg.stair === "spiral") {
+    // 한쪽에 나선 계단 기둥을 세운다
+    const usable = rects.filter((r, i) => !cfg.floors[i].redact);
+    const sx = Math.max(...usable.map((r) => r.x)) + 44;
+    usable.forEach((r, i) => {
+      const k = rects.indexOf(r);
+      if (k === 0) return;
+      o += `<rect x="${sx - 38}" y="${r.y - SL / 2 - 2}" width="76" height="${SL + 4}" fill="${INNER[wallOf(cfg.floors[k - 1])] || "#efe2c4"}"/>`;
+      o += spiral(sx, r.y + r.h - 4, r.y - SL / 2, 66);
+      stairZone[k] = [sx - 40, sx + 40];
+    });
+    if (usable[0]) stairZone[0] = [sx - 40, sx + 40];
+  } else if ((isBuild && cfg.stair !== "none") || shape === "shaft") {
+    for (let i = 1; i < n; i++) {
+      const r = rects[i], up = rects[i - 1], f = cfg.floors[i];
+      if (f.redact || cfg.floors[i - 1].redact || cfg.floors[i - 1].dream) continue;
+      if (shape === "shaft" && i >= cfg.g && !cfg.floors[i - 1].end && !(i === cfg.g && cfg.g > 0)) {
+        // 갱도 가운데 빈 곳을 지그재그로 오르는 계단
+        const dir = i % 2 ? 1 : -1, x0 = dir > 0 ? voidX + 4 : voidX + 106;
+        o += flight(x0, r.y + r.h - 4, r.y - SL / 2, 102, dir);
+        continue;
+      }
+      const lo = Math.max(r.x, up.x) + 10, hi = Math.min(r.x + r.w, up.x + up.w) - 10;
+      const SW = Math.min(130, hi - lo - 10);
+      if (SW < 60) continue;
+      const leftSide = i % 2 === 0;
+      const dir = leftSide ? -1 : 1;
+      const x0 = leftSide ? lo + SW : hi - SW;
+      const xt = x0 + dir * SW;
+      o += `<rect x="${Math.min(xt, xt - dir * SW * 0.45)}" y="${r.y - SL / 2 - 2}" width="${SW * 0.45}" height="${SL + 4}" fill="${INNER[wallOf(cfg.floors[i - 1])] || "#efe2c4"}"/>`;
+      o += flight(x0, r.y + r.h - 4, r.y - SL / 2, SW, dir);
+      stairZone[i] = [Math.min(x0, xt) - 6, Math.max(x0, xt) + 6];
+    }
+  }
+
+  // ── 가구와 인물 ──
   const pins = [];
-  const placeRow = (r, f) => {
+  const placeRow = (r, f, zone) => {
     const items = f.it || [], who = f.who || [];
     const order = [];
     let a = 0, b = 0;
-    while (a < items.length || b < who.length) {
-      if (a < items.length) order.push(["i", items[a++]]);
-      if (b < who.length) order.push(["n", who[b++]]);
+    while (a < items.length || b < who.length) { if (a < items.length) order.push(["i", items[a++]]); if (b < who.length) order.push(["n", who[b++]]); }
+    let x0 = r.x + 36, x1 = r.x + r.w - 36;
+    if (shape === "shaft" && !f.end) { // 빈 곳 양옆으로 나눠 둔다
+      const L = order.filter((_, k) => k % 2 === 0), Rr = order.filter((_, k) => k % 2 === 1);
+      L.forEach(([t, v], k) => put(t, v, r.x + 30 + ((voidX - r.x - 40) * (k + 0.5)) / L.length, r.y + r.h - 4));
+      Rr.forEach(([t, v], k) => put(t, v, voidX + 120 + ((r.x + r.w - voidX - 140) * (k + 0.5)) / Rr.length, r.y + r.h - 4));
+      return;
     }
-    const pad = shape === "outdoor" || shape === "cliff" ? 40 : 30;
-    const span = r.w - pad * 2 - (shape === "terrace" || f.redact ? 0 : 40);
-    const startX = r.x + pad + (cfg.floors.indexOf(f) % 2 ? 50 : 0);
-    order.forEach(([t, v], k) => {
-      const x = f1(startX + (span * (k + 0.5)) / order.length);
-      const y = r.y + r.h - 4;
-      if (t === "i") o += (IT[v] || IT.crate)(x, y, color);
-      else pins.push({ name: v, x, y });
-    });
+    if (zone) { if (zone[0] - x0 > x1 - zone[1]) x1 = zone[0]; else x0 = zone[1]; }
+    order.forEach(([t, v], k) => put(t, v, x0 + ((x1 - x0) * (k + 0.5)) / order.length, r.y + r.h - 4));
   };
-  rects.forEach((r, i) => placeRow(r, cfg.floors[i]));
-  if (rects.wing) placeRow(rects.wing, rects.wing.f);
+  let furn = "";
+  const put = (t, v, x, y) => { x = Math.round(x); if (t === "i") furn += (IT[v] || IT.crate)(x, y, color); else pins.push({ name: v, x, y }); };
+  rects.forEach((r, i) => placeRow(r, cfg.floors[i], stairZone[i]));
+  // 별채
+  if (cfg.wing) {
+    const wf = cfg.wing, last = rects[Math.min(cfg.g, n) - 1] || rects[n - 1];
+    const wx = Math.max(...rects.map((r) => r.x + r.w)) + WT + (ext.has("columns") || ext.has("turrets") || ext.has("tiers") ? margin / 2 + 40 : 40);
+    const wr = { x: wx, y: last.y, w: wingW - 40, h: FH };
+    // 장면 전체가 물이면 따로 물을 깔지 않는다(끊겨 보임)
+    if (wf.water && !cfg.water) o += `<rect x="${wx - 20}" y="${last.y + FH - 24}" width="${wingW}" height="${Math.max(44, groundY - (last.y + FH - 24) + 10)}" fill="url(#${id}w)"/>`;
+    o += `<text x="${wx + (wingW - 40) / 2}" y="${last.y - 6}" text-anchor="middle" font-family="KookminUniversitySunggokSerif, serif" font-size="20" fill="#2c2015">${esc(wf.t)}</text>`;
+    placeRow(wr, wf, null);
+  }
+  // 도면 안의 자잘한 외곽선: 면이 있는 도형에서는 선을 빼고, 가구는 그림자로 띄운다
+  const unline = (str) => str.replace(/<(path|rect|circle|ellipse)\b([^>]*?)\/>/g, (m, tag, attrs) =>
+    /fill="(?!none)[^"]+"/.test(attrs) && /\sstroke="/.test(attrs) ? `<${tag}${attrs.replace(/\s(stroke|stroke-width|stroke-linejoin|stroke-linecap)="[^"]*"/g, "")}/>` : m);
+  o = unline(o) + `<g filter="url(#${id}d)">${unline(furn)}</g>`;
 
-  // 층 표기 (왼쪽 여백)
+  // 층 표기 · 방 이름
   rects.forEach((r, i) => {
     const f = cfg.floors[i];
     const ly = r.y + r.h / 2;
-    o += `<g class="flabel"><path d="M120,${ly} H${r.x - 22}" stroke="${K}" stroke-width=".8" stroke-dasharray="2 4"/>
-      <circle cx="96" cy="${ly - 6}" r="22" fill="${P}" stroke="${K}" stroke-width="2"/><circle cx="96" cy="${ly - 6}" r="17" fill="none" stroke="${color}" stroke-width="1.4"/>
-      <text x="96" y="${ly}" text-anchor="middle" font-family="Cinzel, serif" font-weight="700" font-size="${f.n.length > 2 ? 11 : 15}" fill="${K}">${esc(f.n)}</text>
-      <text x="${r.x + 10}" y="${r.y + 24}" font-family="Gowun Batang, serif" font-weight="700" font-size="19" fill="${f.redact || cfg.dark || cfg.volcanic ? "#f4e9cd" : K}" class="room-name">${esc(f.t)}</text></g>`;
+    const tag = 70;
+    const lightText = f.redact || cfg.dark || cfg.volcanic || f.dream;
+    o += `<g class="flabel"><path d="M${tag + 26},${ly} H${Math.min(...rects.map((q) => q.x)) - margin - 20 > tag + 40 ? r.x - WT - 30 : r.x - WT - 6}" stroke="rgba(44,32,21,.4)" stroke-width="1" stroke-dasharray="2 5"/>
+      <circle cx="${tag}" cy="${ly}" r="24" fill="${color}"/><circle cx="${tag}" cy="${ly}" r="19" fill="none" stroke="#f4e9cd" stroke-width="1.2"/>
+      <text x="${tag}" y="${ly + 6}" text-anchor="middle" font-family="Cinzel, serif" font-weight="700" font-size="${f.n.length > 2 ? 11 : 15}" fill="#f4e9cd">${esc(f.n)}</text>
+      <text x="${r.x + r.w / 2}" y="${r.y + ceilRise(r, f.ceil) * 0.6 + 26}" text-anchor="middle" font-family="KookminUniversitySunggokSerif, serif" font-size="18" fill="${lightText ? "#f4e9cd" : "#2c2015"}">${esc(f.t)}</text></g>`;
   });
 
   // 인물 표식
@@ -473,17 +710,16 @@ export function drawSection(site, CHARS, color) {
     const c = CHARS[p.name];
     const clip = `${id}c${pins.indexOf(p)}`;
     const img = c && c.img ? c.img : null;
-    const veiled = c && c.imgSpoiler;
-    o += `<g class="npc-pin${veiled ? " veiled" : ""}" data-npc="${esc(p.name)}" transform="translate(${p.x},${p.y})" tabindex="0" role="button" aria-label="${esc(p.name)} 소개 보기">
-      <path d="M0,0 l-9,-20 h18z" fill="${K}"/>
-      <circle cy="-50" r="32" fill="${P}" stroke="${K}" stroke-width="2.6"/>
-      <circle cy="-50" r="32" fill="none" stroke="${color}" stroke-width="5" stroke-dasharray="2 5"/>
-      <clipPath id="${clip}"><circle cy="-50" r="26"/></clipPath>
-      ${img ? `<image href="${img}" x="-30" y="-80" width="60" height="88" preserveAspectRatio="xMidYMin slice" clip-path="url(#${clip})" ${veiled ? `filter="url(#${id}b)"` : ""}/>` : `<text y="-42" text-anchor="middle" font-size="24" fill="${K}">${esc(p.name[0])}</text>`}
-      <g transform="translate(0,-92)"><path d="M${-p.name.length * 9 - 14},-13 h${p.name.length * 18 + 28} l-7,13 l7,13 h${-p.name.length * 18 - 28} l7,-13z" fill="${K}"/><text y="5" text-anchor="middle" font-family="Gowun Batang, serif" font-weight="700" font-size="16" fill="${P}">${esc(p.name)}</text></g>
+    const veiled = c && (isVeiled ? isVeiled(p.name) : c.imgSpoiler);
+    const label = c && c.hidden ? "???" : p.name;
+    o += `<g class="npc-pin${veiled ? " veiled" : ""}" data-npc="${esc(p.name)}" transform="translate(${p.x},${p.y})" tabindex="0" role="button" aria-label="${esc(label)} 소개 보기">
+      <ellipse cy="-2" rx="16" ry="4" fill="rgba(0,0,0,.25)"/>
+      <path d="M0,-2 l-10,-20 h20z" fill="${color}"/>
+      <circle cy="-52" r="33" fill="${color}"/><circle cy="-52" r="28" fill="#f4e9cd"/>
+      <clipPath id="${clip}"><circle cy="-52" r="26"/></clipPath>
+      ${img ? `<image href="${img}" x="-30" y="-82" width="60" height="88" preserveAspectRatio="xMidYMin slice" clip-path="url(#${clip})" ${veiled ? `filter="url(#${id}b)"` : ""}/>` : ""}
+      <g transform="translate(0,-96)"><rect x="${-label.length * 9 - 14}" y="-14" width="${label.length * 18 + 28}" height="26" rx="13" fill="#2c2015" opacity=".88"/><text y="5" text-anchor="middle" font-family="KookminUniversitySunggokSerif, serif" font-size="16" fill="#f4e9cd">${esc(label)}</text></g>
     </g>`;
   }
-  o = o.replace("</defs>", `<filter id="${id}b"><feGaussianBlur stdDeviation="5"/></filter></defs>`);
-  o += `</svg>`;
-  return o;
+  return o + `</svg>`;
 }

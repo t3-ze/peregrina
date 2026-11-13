@@ -18,6 +18,7 @@ export function planisphere() {
   const C = 900;
   let s = `<svg viewBox="0 0 1800 1800" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><g transform="translate(${C},${C})" fill="none" stroke="${G}">`;
   // 바깥 테두리와 눈금 (천천히 돈다)
+  s += "@@LAYER@@";
   s += `<g class="ps-outer">`;
   s += `<circle r="880" stroke-width="3"/><circle r="866" stroke-width="1"/><circle r="812" stroke-width="1.5"/><circle r="760" stroke-width="2.5"/>`;
   for (let i = 0; i < 360; i++) {
@@ -38,6 +39,7 @@ export function planisphere() {
   s += `</g>`;
 
   // 행성 궤도 (반대로 돈다)
+  s += "@@LAYER@@";
   s += `<g class="ps-orbits">`;
   PLANETS.forEach((p, i) => {
     s += `<circle r="${p.r}" stroke-width="${i % 2 ? 0.8 : 1.4}" ${i % 2 ? 'stroke-dasharray="2 9"' : ""}/>`;
@@ -50,6 +52,7 @@ export function planisphere() {
   s += `</g>`;
 
   // 안쪽 레테(별자리 판)
+  s += "@@LAYER@@";
   s += `<g class="ps-rete">`;
   s += `<circle r="250" stroke-width="2"/><circle r="236" stroke-width="0.8"/>`;
   s += `<ellipse cx="60" cy="-40" rx="520" ry="500" stroke-width="1.6" stroke-dasharray="14 6 2 6"/>`;
@@ -81,11 +84,14 @@ export function planisphere() {
   s += `</g>`;
 
   // 흩뿌린 별 (반짝임)
+  s += "@@LAYER@@";
   s += `<g class="ps-stars" stroke="none">`;
   for (let i = 0; i < 140; i++) {
     const a = R() * 6.283, r = 120 + R() * 760;
-    s += `<circle class="tw" style="animation-delay:${f1(R() * 6)}s" cx="${f1(Math.cos(a) * r)}" cy="${f1(Math.sin(a) * r)}" r="${f1(0.8 + R() * 2)}" fill="#f6f0dc"/>`;
+    s += `<circle cx="${f1(Math.cos(a) * r)}" cy="${f1(Math.sin(a) * r)}" r="${f1(0.8 + R() * 2)}" fill="#f6f0dc"/>`;
   }
-  s += `</g></g></svg>`;
-  return s;
+  s += `</g>`;
+  // 층마다 따로 SVG로 나눠, 회전은 CSS로 합성 레이어에서만 돌린다(다시 그리지 않음)
+  const [head, ...layers] = s.split("@@LAYER@@");
+  return layers.map((L) => head + L + `</g></svg>`);
 }

@@ -8,34 +8,43 @@
 <meta name="theme-color" content="#0a0d1e">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cinzel+Decorative:wght@400;700&family=Diphylleia&family=Gowun+Batang:wght@400;700&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cinzel+Decorative:wght@400;700&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230a0d1e'/%3E%3Cpath d='M32 6 L37 27 L58 32 L37 37 L32 58 L27 37 L6 32 L27 27Z' fill='%23c8a050'/%3E%3C/svg%3E">
 </head>
 <body>
 <div id="noise" aria-hidden="true"></div>
 
-<!-- 여는 화면: 대서고의 문 -->
+<!-- 여는 화면: 밤하늘에 도착한 봉인된 편지 -->
 <section id="opening" aria-label="여는 화면">
-  <div class="op-light" aria-hidden="true"></div>
-  <div class="op-arch">
-    <div class="op-door left"></div>
-    <div class="op-door right"></div>
-    <div class="op-frame"></div>
+  <div class="op-sky" aria-hidden="true"></div>
+  <div class="op-moon" aria-hidden="true"></div>
+  <div class="op-stage">
+    <div class="op-float">
+      <div class="op-env-back" aria-hidden="true"></div>
+      <div class="op-letter" aria-hidden="true">
+        <div class="op-paper">
+          <p class="op-l op-l1">A V A L O N</p>
+          <p class="op-l op-l2">경계 너머의 세계가</p>
+          <p class="op-l op-l3">당신을 부르고 있습니다.</p>
+          <p class="op-l op-l4">✶</p>
+          <p class="op-l op-l5">PEREGRINA</p>
+        </div>
+      </div>
+      <div class="op-env-front" aria-hidden="true"></div>
+      <div class="op-flap" aria-hidden="true"></div>
+      <button class="op-seal" type="button" aria-label="편지 봉인을 열기"></button>
+    </div>
   </div>
-  <div class="op-title">
-    <p class="op-kicker">BIBLIOTHECA · AVALONIS</p>
-    <h1>PEREGRINA</h1>
-    <p class="op-sub">경계 너머의 세계가 당신을 부르고 있습니다.</p>
-    <button class="op-enter" type="button">문을 열다</button>
-  </div>
+  <p class="op-hint">당신 앞으로 편지가 도착했습니다 · <b>봉인을 눌러 열어 보세요</b></p>
+  <div class="op-sparks" aria-hidden="true"></div>
 </section>
 
 <!-- 세계: 플라니스피어 위의 지도 -->
 <main id="world" aria-label="아발론 전도">
   <div id="sky" aria-hidden="true"></div>
   <div id="stage">
-    <div id="sheet"><svg id="map" viewBox="0 0 3000 2000" width="3000" height="2000" xmlns="http://www.w3.org/2000/svg"></svg></div>
+    <div id="sheet"><svg id="map" viewBox="0 0 3000 2000" width="3000" height="2000" xmlns="http://www.w3.org/2000/svg"></svg><svg id="mapfx" viewBox="0 0 3000 2000" width="3000" height="2000" xmlns="http://www.w3.org/2000/svg"></svg></div>
   </div>
 
   <header id="masthead">
@@ -50,25 +59,25 @@
     <span class="bm-tassel" aria-hidden="true"></span>
   </a>
 
-  <nav id="zoomctl" aria-label="지도 확대 축소">
-    <button type="button" data-z="in" aria-label="확대">＋</button>
-    <button type="button" data-z="fit" aria-label="전체 보기">✶</button>
-    <button type="button" data-z="out" aria-label="축소">－</button>
-  </nav>
-
   <button id="backToWorld" type="button" hidden>← 세계 지도</button>
   <aside id="regionPanel" aria-live="polite" hidden></aside>
   <div id="tip" role="tooltip" hidden></div>
-  <p id="hint">대륙에 손을 올려 보세요 · 끌어서 이동 · 휠로 확대</p>
 </main>
 
 <!-- 아발론 연대기 책장 -->
 <section id="library" aria-label="아발론 연대기" hidden>
   <div id="shelf"></div>
-  <button id="libBack" type="button" aria-label="세계 지도로 돌아가기"><span>세계 지도</span></button>
+  <button id="libBack" type="button" aria-label="세계 지도로 돌아가기">
+    <span class="bm-ribbon"><span class="bm-text">세계 지도</span><span class="bm-latin">MAPPA</span></span>
+    <span class="bm-tassel" aria-hidden="true"></span>
+  </button>
   <p id="libHint">빛나는 책등을 뽑아 펼쳐 보세요</p>
 </section>
 
+<button id="bgmBtn" type="button" aria-label="배경 음악 켜기">
+  <svg viewBox="0 0 32 32" aria-hidden="true"><path d="M12,23 V8 L25,5 V20" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linejoin="round"/><ellipse cx="9" cy="23" rx="3.6" ry="2.8" fill="currentColor"/><ellipse cx="22" cy="20" rx="3.6" ry="2.8" fill="currentColor"/><path class="mute" d="M5,5 L27,27" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"/></svg>
+  <span class="bars" aria-hidden="true"><i></i><i></i><i></i></span>
+</button>
 <div id="overlay" hidden></div>
 <div id="confirm" role="dialog" aria-modal="true" hidden></div>
 <script type="module" src="js/main.js"></script>

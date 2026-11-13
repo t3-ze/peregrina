@@ -239,7 +239,7 @@ function cartouche() {
     <path d="M-120,-120 q120,-60 240,0" fill="${PAPER}" stroke="${INK}" stroke-width="2"/>
     <text x="0" y="-130" text-anchor="middle" font-family="serif" font-size="30" fill="#c8a050" stroke="${INK}" stroke-width=".6">✶</text>
     <text x="0" y="-36" text-anchor="middle" font-family="Cinzel Decorative, serif" font-weight="700" font-size="64" letter-spacing="10" fill="${INK}">AVALON</text>
-    <text x="0" y="18" text-anchor="middle" font-family="Diphylleia, serif" font-size="34" letter-spacing="8" fill="${INK}">경계 너머의 세계 · 아발론 전도</text>
+    <text x="0" y="18" text-anchor="middle" font-family="KookminUniversitySunggokSerif, serif" font-size="34" letter-spacing="8" fill="${INK}">경계 너머의 세계 · 아발론 전도</text>
     <path d="M-200,40 h400" stroke="${INK}" stroke-width="1"/>
     <text x="0" y="74" text-anchor="middle" font-family="IM Fell English, serif" font-style="italic" font-size="24" fill="#5a4630">Tabula orbis Avalonis · anno sancto CCCCXII</text>
   </g>`;
@@ -291,11 +291,10 @@ const centerOf = (p) => { const b = bbox(p); return [b.x + b.w / 2, b.y + b.h / 
 export function buildMap(REGIONS) {
   const allLand = Object.entries(regionPts);
   let defs = `<defs>`;
-  defs += `<pattern id="paperTex" width="600" height="400" patternUnits="userSpaceOnUse"><image href="${stainURL(600, 400, 9)}" width="600" height="400"/></pattern>`;
   for (const [id, p] of allLand) defs += `<clipPath id="clip-${id}"><path d="${smoothClosed(p)}"/></clipPath>`;
   defs += `</defs>`;
 
-  let sea = `<rect width="${W}" height="${H}" fill="${SEA}"/><rect width="${W}" height="${H}" fill="url(#paperTex)"/>`;
+  let sea = `<rect width="${W}" height="${H}" fill="${SEA}"/><image href="${stainURL(900, 600, 9)}" width="${W}" height="${H}" preserveAspectRatio="none"/>`;
   sea += graticule() + compass(330, 1640, 120, true) + compass(2760, 240, 70, true);
   // 해안 물결선
   for (const [id, p] of allLand) {
@@ -310,7 +309,7 @@ export function buildMap(REGIONS) {
   sea += ship(1000, 300, 1) + ship(2150, 1000, 0.8, -1) + ship(1300, 1880, 0.7) + serpent(1700, 1880, 1.1) + whale(2820, 900, 1) + serpent(180, 1000, 0.8);
   sea += `<text x="1500" y="1240" text-anchor="middle" font-family="IM Fell English SC, serif" font-size="30" letter-spacing="14" fill="${INK}" opacity=".7">MARE CONCORDIAE</text>`;
   sea += `<text x="1020" y="120" text-anchor="middle" font-family="IM Fell English, serif" font-style="italic" font-size="34" letter-spacing="6" fill="${INK}" opacity=".7">Oceanus Septentrionalis</text>`;
-  sea += `<text x="2790" y="1880" text-anchor="end" font-family="Diphylleia, serif" font-size="28" fill="${INK}" opacity=".7">경계의 바다 ― 이 너머는 그리지 않았다</text>`;
+  sea += `<text x="2790" y="1880" text-anchor="end" font-family="KookminUniversitySunggokSerif, serif" font-size="28" fill="${INK}" opacity=".7">경계의 바다 ― 이 너머는 그리지 않았다</text>`;
   sea += scaleBar() + cartouche();
 
   // 대륙
@@ -320,7 +319,6 @@ export function buildMap(REGIONS) {
     const islets = isletPts(id).map((ip) => smoothClosed(ip));
     let body = `<path class="land-fill" d="${d}" fill="${PAPER}"/>`;
     body += `<path d="${d}" fill="${r.color}" opacity="${id === "saturnus" ? 0.28 : 0.16}"/>`;
-    body += `<path d="${d}" fill="url(#paperTex)"/>`;
     for (const ip of islets) body += `<path d="${ip}" fill="${PAPER}" stroke="${INK}" stroke-width="2.4"/><path d="${ip}" fill="${r.color}" opacity=".18"/>`;
     body += terrain(id);
     body += `<path d="${d}" fill="none" stroke="${INK}" stroke-width="3.6" stroke-linejoin="round"/>`;
@@ -335,7 +333,7 @@ export function buildMap(REGIONS) {
     labels += `<g class="rlabel" id="lbl-${r.id}" transform="translate(${x},${y})">
       <path d="M-170,-34 h340 l-18,22 l18,22 h-340 l18,-22z" fill="${PAPER}" stroke="${INK}" stroke-width="2.2"/>
       <path d="M-150,-26 h300 M-150,2 h300" stroke="${INK}" stroke-width=".6" opacity=".5"/>
-      <text y="-1" text-anchor="middle" font-family="Diphylleia, serif" font-size="30" fill="${INK}">${esc(r.name)}</text>
+      <text y="-1" text-anchor="middle" font-family="KookminUniversitySunggokSerif, serif" font-size="30" fill="${INK}">${esc(r.name)}</text>
       <text y="42" text-anchor="middle" font-family="IM Fell English SC, serif" font-size="22" letter-spacing="8" fill="${INK}"><tspan fill="${r.color}" stroke="${INK}" stroke-width=".4" font-family="serif">${r.sym}</tspan> ${r.latin}</text>
     </g>`;
   }
@@ -360,7 +358,7 @@ export function buildSites(sites, REGIONS) {
         <g class="glyph" style="--k:${k}"><g transform="scale(${k})">${(GLYPH[s.icon] || GLYPH.plaza)(col[rid])}</g></g>
         <g class="site-label" transform="translate(0,${18})">
           <path d="M${-label.length * 8 - 18},0 h${label.length * 16 + 36} l-8,11 l8,11 h${-label.length * 16 - 36} l8,-11z" fill="#f4e9cd" stroke="${INK}" stroke-width="1.6"/>
-          <text y="16" text-anchor="middle" font-family="Gowun Batang, serif" font-weight="700" font-size="15" fill="${INK}">${esc(label)}</text>
+          <text y="16" text-anchor="middle" font-family="KookminUniversitySunggokSerif, serif" font-size="15" fill="${INK}">${esc(label)}</text>
         </g>
       </g>`;
     }

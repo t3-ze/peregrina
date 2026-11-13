@@ -6,6 +6,10 @@ import { planisphere } from "./planisphere.js";
 import { drawSection, SEC } from "./sections.js";
 import { card, GROUP_LABEL, frameKey } from "./frames.js";
 import { noiseURL, esc, smoothClosed, bbox, rng } from "./util.js";
+import { emblem } from "./emblems.js";
+import "./cursor.js";
+import "./sfx.js";
+import * as bgm from "./bgm.js";
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -20,10 +24,29 @@ const EXTRA = {
 const ALL_SITES = [...SITES, ...WANDERING.map((w) => ({ ...w, ...(EXTRA[w.id] || {}) }))];
 const SITE = Object.fromEntries(ALL_SITES.map((s) => [s.id, s]));
 SITE["glass-tower"].mapName = "???";
+// 숨겨진 인물이 사는 장소: 인물 이야기는 장소 설명에서 빼고 그 인물의 프로필(js/bios.js의 more)로 옮긴다
+const SITE_FIELDS = {
+  "glass-tower": [
+    { k: "위치", v: "정해진 자리가 없다. 길 잃은 편지가 모이는 곳(분실 우편 보관소의 뒷문, 운하가 끝나는 물가, 아무도 쓰지 않는 우체통 옆)에 밤에만 나타난다." },
+    { k: "출입", v: "'보낸이 없는 편지'를 지닌 자에게만 보이고, 그 편지가 문을 연다. 다른 이에게는 달빛이 비친 물웅덩이로만 보인다." },
+    { k: "내부", v: "끝없이 위로 이어지는 나선 계단. 공중에 수천 통의 편지가 새처럼 떠다니고, 벽마다 창이 나 있어 아발론 곳곳의 풍경이 비친다. 꼭대기에는 누군가의 서재가 있다." },
+    { k: "규칙", v: "탑 안에서는 시간이 흐르지 않는다. 오래 머물다 나오면 바깥에서는 몇 시간이 지나 있다. 탑 안에서 쓴 편지는 받는 이의 이름만 적으면 어디든 닿는다." },
+  ],
+  avallach: [
+    { k: "위치", v: "지도에 없다. 사과꽃 향이 나는 안개 속을 걸으면 길이 열린다고 한다. 루나티카 안개 숲 깊은 곳에서 이 향을 맡았다는 이야기가 가끔 돈다." },
+    { k: "풍경", v: "사계절 꽃과 열매가 함께 달리는 사과나무 숲. 한가운데에 거울처럼 고요한 호수와, 그 옆에 덩굴로 뒤덮인 작은 오두막이 있다." },
+    { k: "규칙", v: "허락 없이 사과를 따면 길이 닫혀 숲 밖으로 내쫓긴다." },
+    { k: "호수", v: "물에 비친 얼굴은 가끔 그 사람이 가장 그리워하는 이의 얼굴로 바뀐다." },
+    { k: "손님", v: "다친 원형종, 갈 곳 없는 표류자가 가끔 머문다. 이곳에서 지낸 기억은 숲을 나서면 꿈처럼 흐려진다." },
+  ],
+};
+for (const [id, f] of Object.entries(SITE_FIELDS)) SITE[id].fields = f.map((x) => ({ ...x, spoiler: false }));
 for (const c of Object.values(CHARS)) c.regionLatin = c.region ? RC[c.region].latin : "";
 const WHERE = {};
 for (const s of ALL_SITES) for (const n of new Set(s.npcs)) (WHERE[n] ||= []).push(s.id);
 
+// 초상을 가려야 하는 인물 (숨겨진 인물·정체가 드러나는 초상)
+const veiledImg = (n) => { const c = CHARS[n]; return !!c && (c.hidden || c.imgSpoiler) && !opened.has("img:" + n); };
 // 스포일러 열람 기억 (세션 동안)
 const opened = new Set();
 try { JSON.parse(sessionStorage.getItem("peregrina-open") || "[]").forEach((k) => opened.add(k)); } catch {}
@@ -32,52 +55,110 @@ const remember = (k) => { opened.add(k); try { sessionStorage.setItem("peregrina
 document.documentElement.style.setProperty("--noise", `url(${noiseURL()})`);
 $("#noise").style.backgroundImage = `url(${noiseURL()})`;
 
-// ───────── 여는 화면 ─────────
-function doorSVG(side) {
-  const flip = side === "right" ? `transform="translate(200,0) scale(-1,1)"` : "";
-  let studs = "";
-  for (let y = 120; y < 760; y += 46) studs += `<circle cx="22" cy="${y}" r="4" fill="#b08a48" stroke="#1a120c" stroke-width="1.2"/><circle cx="182" cy="${y}" r="4" fill="#b08a48" stroke="#1a120c" stroke-width="1.2"/>`;
-  return `<svg viewBox="0 0 200 800" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg"><g ${flip}>
-    <path d="M0,800 V250 Q0,30 200,0 V800Z" fill="#3a2418" stroke="#120a06" stroke-width="5"/>
-    ${[0, 1, 2, 3, 4].map((i) => `<path d="M${40 * i + 8},800 V${i ? 230 - i * 40 : 260}" stroke="#2a180f" stroke-width="2"/>`).join("")}
-    <path d="M30,770 V300 Q30,120 175,70 V770Z" fill="none" stroke="#1a100a" stroke-width="3"/>
-    <path d="M44,520 H170 V740 H44Z M44,300 Q50,170 170,120 V480 H44Z" fill="#2f1d13" stroke="#b08a48" stroke-width="2"/>
-    <path d="M0,330 H200 M0,600 H200" stroke="#6a5030" stroke-width="12"/><path d="M0,330 H200 M0,600 H200" stroke="#1a120c" stroke-width="2" stroke-dasharray="1 22"/>
-    ${[330, 600].map((y) => `<path d="M150,${y - 16} q40,16 0,32 q-14,-16 0,-32Z" fill="#6a5030" stroke="#1a120c" stroke-width="1.6"/>`).join("")}
-    ${studs}
-    <circle cx="178" cy="450" r="22" fill="none" stroke="#c8a050" stroke-width="5"/><circle cx="178" cy="428" r="8" fill="#c8a050" stroke="#1a120c" stroke-width="1.6"/>
-    <path d="M107,180 l6,16 l16,6 l-16,6 l-6,16 l-6,-16 l-16,-6 l16,-6Z" fill="#c8a050" stroke="#1a120c" stroke-width="1.2"/>
-  </g></svg>`;
+// ───────── 여는 화면: 봉인된 편지 ─────────
+// 편지 봉투 (600×380): 안쪽 면 / 앞 주머니 / 덮개(앞·뒤) / 밀랍 봉인
+const ENV_BACK = `<svg viewBox="0 0 600 380" preserveAspectRatio="none"><rect width="600" height="380" rx="8" fill="#d6c196"/><rect x="10" y="10" width="580" height="360" rx="4" fill="#ccb587"/></svg>`;
+const ENV_FRONT = `<svg viewBox="0 0 600 380" preserveAspectRatio="none">
+  <path d="M0,0 L300,206 L600,0 V372 Q600,380 592,380 H8 Q0,380 0,372Z" fill="#efe2c3"/>
+  <path d="M0,0 L300,206 L600,0" fill="none" stroke="#c9b285" stroke-width="2"/>
+  <path d="M0,380 L300,196 L600,380" fill="none" stroke="#dccb9f" stroke-width="2"/>
+  <g transform="translate(92,300)" opacity=".75"><circle r="40" fill="none" stroke="#a4372f" stroke-width="2" stroke-dasharray="5 4"/><circle r="31" fill="none" stroke="#a4372f" stroke-width="1"/>
+    <text y="-6" text-anchor="middle" font-family="IM Fell English SC, serif" font-size="13" letter-spacing="2" fill="#a4372f">AVALON</text><text y="12" text-anchor="middle" font-family="IM Fell English, serif" font-size="11" fill="#a4372f">CCCCXII</text>
+    <path d="M44,-10 q20,-8 40,0 t40,0 t40,0 M44,0 q20,-8 40,0 t40,0 t40,0 M44,10 q20,-8 40,0 t40,0 t40,0" fill="none" stroke="#a4372f" stroke-width="1.2"/></g>
+  <text x="330" y="318" text-anchor="middle" font-family="KookminUniversitySunggokSerif, serif" font-size="26" fill="#3a2a1c">경계 너머의 당신에게</text>
+  <path d="M220,330 h220" stroke="#3a2a1c" stroke-width="1" opacity=".4"/>
+  <g transform="translate(520,262)"><rect x="-34" y="-42" width="68" height="84" fill="#f6efdc" stroke="#c9b285" stroke-width="2" stroke-dasharray="3 3"/><rect x="-26" y="-34" width="52" height="68" fill="#24305e"/>
+    <circle cx="0" cy="-2" r="13" fill="#e3b04b"/><ellipse cx="0" cy="-2" rx="22" ry="6" fill="none" stroke="#ead48f" stroke-width="1.6"/><circle cx="-14" cy="-22" r="1.6" fill="#f6f0dc"/><circle cx="16" cy="20" r="1.4" fill="#f6f0dc"/></g>
+</svg>`;
+const FLAP_FRONT = `<svg viewBox="0 0 600 215" preserveAspectRatio="none"><path d="M0,0 H600 L318,206 Q300,218 282,206Z" fill="#e8d6ad"/><path d="M14,6 H586" stroke="#d6c196" stroke-width="2"/></svg>`;
+const FLAP_BACK = `<svg viewBox="0 0 600 215" preserveAspectRatio="none"><defs><pattern id="opLining" width="36" height="36" patternUnits="userSpaceOnUse"><rect width="36" height="36" fill="#24305e"/><path d="M18,9 l2,6 l6,2 l-6,2 l-2,6 l-2,-6 l-6,-2 l6,-2z" fill="#c8a050"/></pattern></defs><path d="M0,215 H600 L318,9 Q300,-3 282,9Z" fill="url(#opLining)"/></svg>`;
+const SEAL_HALF = (side) => `<svg viewBox="0 0 120 120"><defs><clipPath id="opSeal${side}"><rect x="${side === "l" ? 0 : 60}" y="0" width="60" height="120"/></clipPath></defs><g clip-path="url(#opSeal${side})">
+  <path d="M60,8 C72,6 78,14 88,14 C100,16 104,28 108,38 C116,48 112,60 114,70 C112,84 104,90 98,100 C88,110 76,108 66,114 C54,114 46,108 36,106 C24,100 18,90 12,80 C8,68 10,58 8,48 C12,34 20,26 30,18 C40,12 50,10 60,8Z" fill="#a4372f"/>
+  <circle cx="60" cy="60" r="34" fill="#8f2c25"/><circle cx="60" cy="60" r="30" fill="none" stroke="#c9564b" stroke-width="2"/>
+  <path d="M60,34 L66,54 L86,60 L66,66 L60,86 L54,66 L34,60 L54,54Z" fill="#c9564b"/><circle cx="60" cy="60" r="4" fill="#8f2c25"/></g>
+  ${side === "l" ? `<path d="M60,6 L56,30 L63,48 L55,70 L62,92 L58,116" fill="none" stroke="#5e1c18" stroke-width="2.4"/>` : ""}</svg>`;
+$(".op-env-back").innerHTML = ENV_BACK;
+$(".op-env-front").innerHTML = ENV_FRONT;
+$(".op-flap").innerHTML = `<div class="face front">${FLAP_FRONT}</div><div class="face back">${FLAP_BACK}</div>`;
+$(".op-seal").innerHTML = `<span class="half l">${SEAL_HALF("l")}</span><span class="half r">${SEAL_HALF("r")}</span>`;
+$(".op-moon").innerHTML = `<svg viewBox="0 0 120 120"><path d="M74,10 A52,52 0 1 0 110,82 A42,42 0 1 1 74,10Z" fill="#efe6c7"/><circle cx="46" cy="70" r="5" fill="#ddd2ac"/><circle cx="62" cy="92" r="3.5" fill="#ddd2ac"/></svg>`;
+// 밤하늘 별과 별똥별
+{
+  const R = rng(1225);
+  let h = "";
+  for (let i = 0; i < 140; i++) {
+    const big = R() < 0.12;
+    h += `<i class="${big ? "st big" : "st"}" style="left:${(R() * 100).toFixed(2)}%;top:${(R() * 100).toFixed(2)}%;animation-delay:${(R() * 5).toFixed(2)}s;animation-duration:${(3 + R() * 4).toFixed(2)}s"></i>`;
+  }
+  for (let i = 0; i < 3; i++) h += `<i class="shoot" style="top:${8 + i * 14}%;left:${20 + i * 25}%;animation-delay:${2 + i * 3.4}s"></i>`;
+  $(".op-sky").innerHTML = h;
 }
-function archSVG() {
-  let s = `<svg viewBox="0 0 520 820" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">`;
-  s += `<path d="M0,820 V300 Q0,40 260,0 Q520,40 520,300 V820 H460 V310 Q460,110 260,74 Q60,110 60,310 V820Z" fill="#1b1424" stroke="#c8a050" stroke-width="3"/>`;
-  s += `<path d="M30,820 V305 Q30,72 260,36 Q490,72 490,305 V820" fill="none" stroke="#c8a050" stroke-width="1.2" stroke-dasharray="2 8"/>`;
-  for (let i = 0; i < 9; i++) { const y = 360 + i * 50; s += `<path d="M8,${y} h44 M468,${y} h44" stroke="#c8a050" stroke-width="1"/>`; }
-  s += `<circle cx="260" cy="40" r="30" fill="#141a33" stroke="#c8a050" stroke-width="3"/><path d="M260,16 l6,18 l18,6 l-18,6 l-6,18 l-6,-18 l-18,-6 l18,-6Z" fill="#ead48f"/>`;
-  return s + `</svg>`;
-}
-$(".op-door.left").innerHTML = doorSVG("left");
-$(".op-door.right").innerHTML = doorSVG("right");
-$(".op-frame").innerHTML = archSVG();
 
-let entered = false;
+let entered = false, opStage = 0;
+const opTimers = [];
+function sparkBurst() {
+  const box = $(".op-sparks");
+  const R = rng(Date.now() & 0xffff);
+  let h = "";
+  for (let i = 0; i < 46; i++) {
+    const a = R() * Math.PI * 2, d = 160 + R() * 420;
+    h += `<i style="--dx:${Math.cos(a) * d}px;--dy:${Math.sin(a) * d}px;--s:${(0.5 + R() * 1.1).toFixed(2)};--r:${Math.round(R() * 360)}deg;animation-delay:${(R() * 0.25).toFixed(2)}s"></i>`;
+  }
+  box.innerHTML = h;
+}
+function flyAway() {
+  if (opStage >= 3) return;
+  opStage = 3;
+  opTimers.forEach(clearTimeout);
+  const op = $("#opening");
+  op.classList.add("open", "read", "fly");
+  sparkBurst();
+  setTimeout(() => { op.classList.add("gone"); $("#world").classList.add("on", "intro"); fit(false); }, 900);
+  setTimeout(() => { op.remove(); $("#world").classList.remove("intro"); }, 2500);
+}
 function enter() {
   if (entered) return;
   entered = true;
+  opStage = 1;
   const op = $("#opening");
-  op.classList.add("open");
-  setTimeout(() => op.classList.add("open2"), 1300);
-  setTimeout(() => { op.classList.add("gone"); $("#world").classList.add("on", "intro"); fit(false); }, 1700);
-  setTimeout(() => { op.remove(); $("#world").classList.remove("intro"); }, 3300);
+  bgm.start();
+  op.classList.add("open");                                                    // 봉인이 갈라지고 덮개가 열리며 편지가 올라온다
+  opTimers.push(setTimeout(() => { opStage = 2; op.classList.add("read"); }, 2200)); // 봉투가 내려가고 편지가 펼쳐진다
+  opTimers.push(setTimeout(flyAway, 5600));                                        // 편지가 별빛으로 흩어진다
 }
-$(".op-enter").addEventListener("click", enter);
-$("#opening").addEventListener("click", (e) => { if (e.target.closest(".op-arch")) enter(); });
-document.addEventListener("keydown", (e) => { if (!entered && (e.key === "Enter" || e.key === " ")) enter(); }, { once: false });
+$(".op-seal").addEventListener("click", (e) => { e.stopPropagation(); enter(); });
+$("#opening").addEventListener("click", () => { if (!entered) enter(); else if (opStage === 2) flyAway(); });
+document.addEventListener("keydown", (e) => { if (e.key !== "Enter" && e.key !== " ") return; if (!entered) enter(); else if (opStage === 2) flyAway(); });
+
+// ───────── 배경 음악 버튼 ─────────
+{
+  const btn = $("#bgmBtn");
+  bgm.onChange((s) => { btn.classList.toggle("on", s.playing); btn.setAttribute("aria-label", s.playing ? "배경 음악 끄기" : "배경 음악 켜기"); btn.title = s.playing ? "배경 음악 끄기" : "배경 음악 켜기"; });
+  btn.addEventListener("click", (e) => { e.stopPropagation(); bgm.toggle(); });
+}
 
 // ───────── 세계 지도 ─────────
-$("#sky").innerHTML = planisphere();
+// 밤하늘: 흩뿌린 별(일부만 반짝임) + 가끔 떨어지는 별똥별. 플라니스피어 뒤에 깐다.
+const nightSky = (() => {
+  const R = rng(4040);
+  let h = "";
+  for (let i = 0; i < 220; i++) {
+    const t = R(), size = t < 0.7 ? 1 : t < 0.93 ? 2 : 3;
+    const tw = R() < 0.35 ? ` tw" style="animation-delay:${(R() * 6).toFixed(2)}s;animation-duration:${(3 + R() * 4).toFixed(2)}s;` : `" style="opacity:${(0.35 + R() * 0.6).toFixed(2)};`;
+    h += `<i class="ns s${size}${tw}left:${(R() * 100).toFixed(2)}%;top:${(R() * 100).toFixed(2)}%"></i>`;
+  }
+  // 별똥별: 길이·굵기·머리 크기·각도·속도·주기를 제각각
+  for (let i = 0; i < 9; i++) {
+    const big = R() < 0.25;
+    const len = big ? 220 + R() * 160 : 70 + R() * 140, th = big ? 2 + R() * 1.4 : 0.8 + R() * 1.2;
+    const head = th * (2.2 + R() * 1.4), ang = -(18 + R() * 22), dist = 280 + R() * 420;
+    h += `<i class="meteor" style="--len:${len.toFixed(0)}px;--th:${th.toFixed(1)}px;--hd:${head.toFixed(1)}px;--a:${ang.toFixed(1)}deg;--d:${dist.toFixed(0)}px;left:${(25 + R() * 75).toFixed(1)}%;top:${(R() * 55).toFixed(1)}%;animation-delay:${(1 + i * 2.3 + R() * 2).toFixed(2)}s;animation-duration:${(14 + R() * 10).toFixed(1)}s"></i>`;
+  }
+  return `<div class="night">${h}</div>`;
+})();
+$("#sky").innerHTML = nightSky + `<div class="sky-in">${planisphere().map((svg, i) => `<div class="ps-layer ps-l${i}">${svg}</div>`).join("")}</div>`;
 const map = $("#map");
+const fx = $("#mapfx");
 const parts = buildMap(REGIONS);
 const letterX = 2770, letterY = 590;
 map.innerHTML = parts.defs +
@@ -87,86 +168,33 @@ map.innerHTML = parts.defs +
      <path d="M-70,-46 l70,52 l70,-52" fill="none" stroke="#2c2015" stroke-width="1.8" transform="rotate(-8)"/>
      <circle cx="0" cy="8" r="20" fill="#a4372f" stroke="#2c2015" stroke-width="2"/><path d="M0,-6 v26 M-8,2 h16" stroke="#f4e9cd" stroke-width="2.4"/>
      <path d="M-6,-60 l12,0 l-6,20z" fill="#888" stroke="#2c2015" stroke-width="1.4"/>
-     <text y="76" text-anchor="middle" font-family="Gowun Batang, serif" font-weight="700" font-size="20" fill="#2c2015">위치 불명의 서신</text></g></g>` +
-  `<g id="frame">${parts.frame}</g>` +
-  `<rect id="dim" width="${W}" height="${H}" fill="#0d0912" opacity="0"/>` +
-  `<g id="lift"></g><g id="sitesLayer">${buildSites(ALL_SITES.filter((s) => s.region), REGIONS)}</g><g id="hits"></g>`;
+     <text y="76" text-anchor="middle" font-family="KookminUniversitySunggokSerif, serif" font-size="22" fill="#2c2015">위치 불명의 서신</text></g></g>` +
+  `<g id="frame">${parts.frame}</g>`;
+// 강조·표식·판정은 별도 SVG(자기 합성 레이어)에 둬서, 움직여도 지도 전체를 다시 그리지 않게 한다
+fx.innerHTML = `<rect id="dim" width="${W}" height="${H}" fill="#0d0912" opacity="0"/>` +
+  `<g id="lift"></g><g id="hits"></g><g id="sitesLayer">${buildSites(ALL_SITES.filter((s) => s.region), REGIONS)}</g>`;
+fx.prepend($("#letter"));
 // 대륙 판정 영역
 $("#hits").innerHTML = REGIONS.map((r) => `<path class="hit" data-id="${r.id}" d="${smoothClosed(regionPts[r.id])}" tabindex="0" role="button" aria-label="${esc(r.name)}"/>`).join("");
-// 지도 위로 사이트 레이어를 올리되, 대륙 판정보다는 아래에 두면 표식이 클릭되지 않으므로 판정을 아래로
-$("#hits").after($("#sitesLayer"));
 
 // ── 이동·확대 ──
 const stage = $("#stage"), sheet = $("#sheet");
 const view = { x: 0, y: 0, s: 0.4 };
-let minS = 0.2, maxS = 3;
 function apply(anim) {
   sheet.classList.toggle("anim", !!anim);
   sheet.style.transform = `translate(${view.x}px,${view.y}px) scale(${view.s})`;
-  const sky = $("#sky svg");
-  if (sky) sky.style.transform = `translate(${(view.x - innerWidth / 2) * 0.04}px, ${(view.y - innerHeight / 2) * 0.04}px)`;
+  const sky = $("#sky .sky-in");
+  if (sky) sky.style.transform = `translate3d(${(view.x - innerWidth / 2) * 0.04}px, ${(view.y - innerHeight / 2) * 0.04}px, 0)`;
 }
-function clampView() {
-  const w = W * view.s, h = H * view.s, m = 120;
-  view.x = Math.min(innerWidth - m, Math.max(m - w, view.x));
-  view.y = Math.min(innerHeight - m, Math.max(m - h, view.y));
-}
+// 메인 지도는 확대·이동 없이 화면 가운데에 꽉 차게 둔다. 대륙을 누를 때만 그 대륙을 당겨 보여 준다.
 function fit(anim = true) {
-  const s = Math.min((innerWidth * 0.92) / W, (innerHeight * 0.84) / H);
-  minS = s * 0.7;
-  maxS = Math.max(3, s * 8);
+  const s = Math.min((innerWidth * 0.94) / W, (innerHeight * 0.9) / H);
   view.s = s;
   view.x = (innerWidth - W * s) / 2;
-  view.y = (innerHeight - H * s) / 2 + 14;
+  view.y = (innerHeight - H * s) / 2 + 10;
   apply(anim);
 }
-function zoomAt(px, py, k, anim) {
-  const ns = Math.min(maxS, Math.max(minS, view.s * k));
-  view.x = px - (px - view.x) * (ns / view.s);
-  view.y = py - (py - view.y) * (ns / view.s);
-  view.s = ns;
-  clampView();
-  apply(anim);
-}
-stage.addEventListener("wheel", (e) => { e.preventDefault(); zoomAt(e.clientX, e.clientY, Math.exp(-e.deltaY * 0.0015), false); }, { passive: false });
-const pointers = new Map();
-let dragMoved = 0, pinch = null, last = null;
-stage.addEventListener("pointerdown", (e) => {
-  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-  if (pointers.size === 1) { last = { x: e.clientX, y: e.clientY }; dragMoved = 0; }
-  if (pointers.size === 2) { const [a, b] = [...pointers.values()]; pinch = { d: Math.hypot(a.x - b.x, a.y - b.y), s: view.s }; }
-});
-addEventListener("pointermove", (e) => {
-  if (!pointers.has(e.pointerId)) return;
-  pointers.set(e.pointerId, { x: e.clientX, y: e.clientY });
-  if (pointers.size === 2 && pinch) {
-    const [a, b] = [...pointers.values()];
-    const d = Math.hypot(a.x - b.x, a.y - b.y);
-    zoomAt((a.x + b.x) / 2, (a.y + b.y) / 2, (pinch.s * (d / pinch.d)) / view.s, false);
-    dragMoved = 99;
-    return;
-  }
-  if (!last) return;
-  const dx = e.clientX - last.x, dy = e.clientY - last.y;
-  dragMoved += Math.abs(dx) + Math.abs(dy);
-  if (dragMoved > 6) {
-    stage.classList.add("drag");
-    if (stage.hasPointerCapture && !stage.hasPointerCapture(e.pointerId)) try { stage.setPointerCapture(e.pointerId); } catch {}
-    view.x += dx; view.y += dy; clampView(); apply(false);
-    hideTip();
-  }
-  last = { x: e.clientX, y: e.clientY };
-});
-const endPtr = (e) => { pointers.delete(e.pointerId); if (pointers.size < 2) pinch = null; if (!pointers.size) { last = null; stage.classList.remove("drag"); } };
-addEventListener("pointerup", endPtr);
-addEventListener("pointercancel", endPtr);
-stage.addEventListener("click", (e) => { if (dragMoved > 6) { e.stopPropagation(); e.preventDefault(); } }, true);
-$("#zoomctl").addEventListener("click", (e) => {
-  const z = e.target.closest("button")?.dataset.z;
-  if (z === "in") zoomAt(innerWidth / 2, innerHeight / 2, 1.5, true);
-  if (z === "out") zoomAt(innerWidth / 2, innerHeight / 2, 1 / 1.5, true);
-  if (z === "fit") focused ? focusRegion(focused) : fit(true);
-});
+const pointers = { size: 0 };
 addEventListener("resize", () => { focused ? focusRegion(focused, false) : fit(false); });
 
 // ── 툴팁 ──
@@ -174,7 +202,7 @@ const tip = $("#tip");
 function showTip(html, e) { tip.innerHTML = html; tip.hidden = false; moveTip(e); }
 function moveTip(e) { if (tip.hidden) return; const x = Math.min(e.clientX + 18, innerWidth - 280), y = Math.min(e.clientY + 18, innerHeight - 90); tip.style.left = x + "px"; tip.style.top = y + "px"; }
 function hideTip() { tip.hidden = true; }
-map.addEventListener("pointermove", moveTip);
+stage.addEventListener("pointermove", moveTip);
 
 // ── 대륙 강조 (떠오름) ──
 let hot = null, focused = null;
@@ -239,9 +267,10 @@ $("#letter").addEventListener("pointerout", hideTip);
 // ── 대륙 진입 ──
 function focusRegion(id, anim = true) {
   focused = id;
+  bgm.setAmbient(id); // 그 대륙의 앰비언트를 서서히 켠다
   hot = id;
   hideTip();
-  map.classList.add("focus");
+  fx.classList.add("focus");
   $("#world").classList.add("focused");
   lift(id);
   $$("#sitesLayer .sites").forEach((g) => g.classList.toggle("active", g.dataset.region === id));
@@ -262,7 +291,8 @@ function focusRegion(id, anim = true) {
 }
 function leaveRegion() {
   focused = null; hot = null;
-  map.classList.remove("focus");
+  bgm.setAmbient(null); // 전도에서는 앰비언트를 서서히 끈다
+  fx.classList.remove("focus");
   $("#world").classList.remove("focused");
   unlift();
   $("#regionPanel").hidden = true;
@@ -284,7 +314,7 @@ function renderRegionPanel(id) {
     <hr class="rule">
     <dl class="fields">${r.fields.filter((f) => f.v.trim()).map((f) => fieldHTML(f)).join("")}</dl>
     <hr class="rule">
-    <p class="rp-latin">LOCA · 주요 기관과 장소</p>
+    <p class="rp-latin">LOCA</p><h3 class="rp-sec">주요 기관과 장소</h3>
     <ul class="site-list">${sites.map((s) => `<li><button type="button" data-site="${s.id}"><span>${esc(siteName(s))}</span><span class="kind">${KIND[s.kind] || ""}</span></button></li>`).join("")}</ul>`;
   p.scrollTop = 0;
 }
@@ -292,7 +322,8 @@ $("#regionPanel").addEventListener("click", (e) => { const b = e.target.closest(
 const siteName = (s) => (s.kind === "hidden" && !opened.has("site:" + s.id) ? (s.id === "glass-tower" ? "??? (스포일러)" : s.name + " (스포일러)") : s.realName || s.mapName || s.name);
 
 function fieldHTML(f) {
-  const body = esc(f.v.trim()).replace(/\n/g, "<br>");
+  const lines = f.v.trim().split("\n").map((l) => l.trim()).filter(Boolean);
+  const body = lines.length > 1 ? `<ul>${lines.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>` : esc(lines[0] || "");
   const v = f.spoiler ? veil(body) : body;
   return `${f.k ? `<dt>${esc(f.k)}</dt>` : ""}<dd>${v}</dd>`;
 }
@@ -356,7 +387,7 @@ function openSite(id) {
   }
   hideTip();
   const color = s.region ? RC[s.region].color : "#a4372f";
-  const plan = drawSection(s, CHARS, color);
+  const plan = drawSection(s, CHARS, color, veiledImg);
   const r = s.region ? RC[s.region] : null;
   const name = s.realName || s.name;
   const fields = (s.fields || []).filter((f) => f.v && f.v.trim() && f.k !== "층");
@@ -371,11 +402,10 @@ function openSite(id) {
       <h2 class="si-name">${esc(name)}</h2>
       ${r ? `<span class="chip">${esc(r.name)}</span>` : `<span class="chip">위치 불명</span>`}
       <hr class="rule">
-      <dl class="fields">${fields.map(fieldHTML).join("")}${floors ? `<dt>층별 구성</dt><dd>${esc(floors.v.trim()).replace(/\n/g, "<br>")}</dd>` : ""}</dl>
+      <dl class="fields">${fields.map(fieldHTML).join("")}${floors ? `${fieldHTML({ k: "층별 구성", v: floors.v })}` : ""}</dl>
       <hr class="rule">
       <p class="si-kicker">PERSONAE · 이곳의 인물</p>
       <div class="npc-row">${npcs.map((n) => chip(n)).join("")}</div>
-      <p class="si-kicker" style="margin-top:16px">도면의 표식을 눌러도 인물을 볼 수 있어요.</p>
     </div></div>`, (el) => {
     el.querySelector(".site-plan").addEventListener("click", (e) => { const p = e.target.closest(".npc-pin"); if (p) openNPC(p.dataset.npc, () => openSite(id)); });
     el.querySelector(".site-plan").addEventListener("keydown", (e) => { const p = e.target.closest(".npc-pin"); if (p && e.key === "Enter") openNPC(p.dataset.npc, () => openSite(id)); });
@@ -384,8 +414,9 @@ function openSite(id) {
 }
 function chip(n) {
   const c = CHARS[n];
-  const veiled = c && ((c.hidden && !opened.has("npc:" + n)) || (c.imgSpoiler && !opened.has("img:" + n)));
-  return `<button class="npc-chip${veiled ? " veiled" : ""}" type="button" data-npc="${esc(n)}">${c?.img ? `<img src="${c.img}" alt="" loading="lazy">` : ""}<span>${esc(n)}</span></button>`;
+  const veiled = veiledImg(n);
+  const nameHidden = c && c.hidden;
+  return `<button class="npc-chip${veiled ? " veiled" : ""}" type="button" data-npc="${esc(n)}">${c?.img ? `<img src="${c.img}" alt="" loading="lazy">` : ""}<span>${esc(nameHidden ? "???" : n)}</span></button>`;
 }
 
 // ───────── 인물 ─────────
@@ -400,26 +431,28 @@ function openNPC(name, back) {
   const imgVeil = c.imgSpoiler && !opened.has("img:" + name);
   const where = (WHERE[name] || []).map((id) => `<button type="button" data-site="${id}">${esc(siteName(SITE[id]))}</button>`).join("");
   const fam = c.fields.find((f) => f.k === "사역마" || f.k === "종족");
-  const draw = (t) => card(c, rc, { veil: imgVeil, showTrue: t });
   layerBack = back || null;
   openLayer(`<div class="sheet npc-sheet" role="dialog" aria-modal="true" aria-label="${esc(name)}">
     <button class="close" type="button" aria-label="${back ? "돌아가기" : "닫기"}">${back ? "↩" : "✕"}</button>
-    <div class="npc-card"><div class="cardwrap">${draw(false)}</div>
-      ${c.imgTrue ? `<button class="toggle-true" type="button">본모습 보기</button>` : ""}
-      ${imgVeil ? `<button class="toggle-true reveal-img" type="button">⚠ 초상 봉인 풀기</button>` : ""}
-    </div>
+    <div class="npc-photo${imgVeil ? " veiled" : ""}">${c.img ? `<img src="${c.img}" alt="${esc(name)}의 초상">` : ""}</div>
     <div class="npc-page">
       <p class="si-kicker">${esc(GROUP_LABEL[c.group] || "")}${c.region ? " · " + RC[c.region].latin : ""}</p>
       <h2 class="np-name">${esc(name)}</h2>
       <p class="np-sub">${esc(c.subtitle)}</p>
+      <div class="np-tools">
+        ${c.imgTrue && !imgVeil ? `<button class="btn small toggle-true" type="button">본모습 보기</button>` : ""}
+        ${imgVeil ? `<button class="btn small danger reveal-img" type="button">⚠ 초상 봉인 풀기</button>` : ""}
+      </div>
       <hr class="rule">
       <p class="np-bio">${esc(bio.text)}</p>
       ${fam ? `<dl class="fields"><dt>${fam.k === "종족" ? "종족" : "사역마"}</dt><dd>${esc(fam.v.split("\n")[0])}</dd></dl>` : ""}
-      ${bio.secret ? `<div class="secret-note"><span class="label">SECRETUM · 숨겨진 이야기</span>${veil(`<p class="np-bio" style="text-indent:0">${esc(bio.secret)}</p>`, "div")}</div>` : ""}
+      ${(bio.more || []).filter((m) => !m.spoiler).map((m) => `<dl class="fields"><dt>${esc(m.k)}</dt><dd>${esc(m.v)}</dd></dl>`).join("")}
+      ${(bio.more || []).filter((m) => m.spoiler).map((m) => `<div class="secret-note"><span class="label">SECRETUM · ${esc(m.k)}</span>${veil(`<p class="np-bio plain">${esc(m.v)}</p>`, "div")}</div>`).join("")}
+      ${bio.secret ? `<div class="secret-note"><span class="label">SECRETUM · 숨겨진 이야기</span>${veil(`<p class="np-bio">${esc(bio.secret)}</p>`, "div")}</div>` : ""}
       ${where ? `<div class="np-where"><p class="si-kicker">LOCA · 만날 수 있는 곳</p>${where}</div>` : ""}
     </div></div>`, (el) => {
     let tf = false;
-    el.querySelector(".toggle-true:not(.reveal-img)")?.addEventListener("click", (e) => { tf = !tf; el.querySelector(".cardwrap").innerHTML = draw(tf); e.target.textContent = tf ? "인간형 보기" : "본모습 보기"; });
+    el.querySelector(".toggle-true")?.addEventListener("click", (e) => { tf = !tf; el.querySelector(".npc-photo img").src = tf ? c.imgTrue : c.img; e.target.textContent = tf ? "인간형 보기" : "본모습 보기"; });
     el.querySelector(".reveal-img")?.addEventListener("click", () => ask("스포일러 주의", "이 초상은 인물의 숨겨진 정체를 드러내요.", () => { remember("img:" + name); openNPC(name, back); }));
     el.querySelector(".np-where")?.addEventListener("click", (e) => { const b = e.target.closest("[data-site]"); if (b) openSite(b.dataset.site); });
   });
@@ -447,7 +480,7 @@ function buildShelf() {
       if (t) {
         t.done = true;
         const h = rowH * (0.8 + R() * 0.08) - 16;
-        html += `<button class="book glow" type="button" data-book="${t.b.id}" style="width:48px;height:${h}px" aria-label="${esc(t.b.title)} 펼치기"><span class="em">${t.b.emblem}</span><span class="tt">${esc(t.b.title)}</span><span class="lt">${t.b.latin}</span>${[0, 1, 2].map((m) => `<i class="mote" style="left:${8 + m * 14}px;top:${20 + m * 30}%;animation-delay:${m * 1.6}s"></i>`).join("")}</button>`;
+        html += `<button class="book glow" type="button" data-book="${t.b.id}" style="width:48px;height:${h}px" aria-label="${esc(t.b.title)} 펼치기"><span class="em">${emblem(t.b.id, 22)}</span><span class="sp"><span class="tt">${esc(t.b.title)}</span><span class="lt">${t.b.latin}</span></span>${[0, 1, 2].map((m) => `<i class="mote" style="left:${8 + m * 14}px;top:${20 + m * 30}%;animation-delay:${m * 1.6}s"></i>`).join("")}</button>`;
         x += 50;
         continue;
       }
@@ -464,21 +497,41 @@ function buildShelf() {
   html += `</div>`;
   shelf.innerHTML = html;
 }
-function showLibrary() {
+// 화면 전환: 책장을 넘기듯 세계 지도 한 장이 책등(왼쪽)을 축으로 넘어간다.
+// 지도 → 연대기: 지도가 왼쪽으로 넘어가며 뒤의 책장이 드러난다 / 연대기 → 지도: 지도가 왼쪽에서 넘어와 덮는다
+let turning = false;
+const calmMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+function pageTurn(cls, done) {
+  const w = $("#world");
+  if (calmMotion) { done(); return; }
+  turning = true;
+  w.classList.add(cls);
+  w.addEventListener("animationend", function end(e) {
+    if (e.target !== w) return;
+    w.removeEventListener("animationend", end);
+    done();
+    w.classList.remove(cls);
+    turning = false;
+  });
+}
+function showLibrary(instant) {
+  if (turning || !$("#library").hidden) return;
   closeLayer();
   if (focused) leaveRegion();
   buildShelf();
   $("#library").hidden = false;
   $("#shelf").scrollLeft = 0;
   history.replaceState(null, "", "#library");
+  if (instant !== true) pageTurn("turn-away", () => {});
 }
 function showWorld() {
+  if (turning || $("#library").hidden) return;
   closeLayer();
-  $("#library").hidden = true;
   history.replaceState(null, "", "#");
+  pageTurn("turn-back", () => { $("#library").hidden = true; });
 }
 $("#bookmark").addEventListener("click", (e) => { e.preventDefault(); showLibrary(); });
-$("#libBack").addEventListener("click", showWorld);
+$("#libBack").addEventListener("click", () => showWorld());
 addEventListener("resize", () => { if (!$("#library").hidden) buildShelf(); });
 // 책장 끌어서 넘기기 / 휠
 {
@@ -530,30 +583,52 @@ function chapterHTML(ch) {
   if (ch.lore) return md(LORE[ch.lore] || "");
   return md(ch.md || "");
 }
+const ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"];
+function rightPage(b, idx) {
+  const ch = b.chapters[idx];
+  return `<div class="page-body"><p class="ch-head">CAPITULUM ${ROMAN[idx]} · ${esc(ch.t)}</p><div class="md">${chapterHTML(ch)}</div></div>
+    <div class="pager">${idx > 0 ? `<button type="button" data-ch="${idx - 1}">‹ 앞 장</button>` : "<span></span>"}<span>${idx + 1} / ${b.chapters.length}</span>${idx < b.chapters.length - 1 ? `<button type="button" data-ch="${idx + 1}">다음 장 ›</button>` : "<span></span>"}</div>`;
+}
 function openBook(id, idx = 0, fresh = false) {
   const b = BOOKS.find((x) => x.id === id);
-  const ch = b.chapters[idx];
+  let cur = idx, busy = false;
   const doOpen = () => {
     openLayer(`<div class="reader" role="dialog" aria-modal="true" aria-label="${esc(b.title)}">
       <div class="cover" style="background:${b.color}"></div>
       ${fresh ? `<div class="flap" style="background:${b.color}"><span>${esc(b.title)}</span></div>` : ""}
       <section class="page left">
         <button class="close" type="button" aria-label="책 덮기">✕</button>
-        <div class="bk-emblem" style="background:${b.color}">${b.emblem}</div>
-        <h2 class="bk-title">${esc(b.title)}</h2><p class="bk-latin">${b.latin}</p>
-        <hr class="rule">
-        <ol class="toc">${b.chapters.map((c, i) => `<li><button type="button" data-ch="${i}" ${i === idx ? 'aria-current="true"' : ""}>${esc(c.t)}</button></li>`).join("")}</ol>
-        ${/veil/.test(b.chapters.map(chapterHTML).join("")) ? `<button class="btn unseal" type="button">✶ 이 책의 봉인 모두 풀기</button>` : ""}
+        <div class="page-body">
+          <div class="bk-emblem" style="background:${b.color};--em-bg:${b.color}">${emblem(b.id, 52)}</div>
+          <h2 class="bk-title">${esc(b.title)}</h2><p class="bk-latin">${b.latin}</p>
+          <hr class="rule">
+          <ol class="toc">${b.chapters.map((c, i) => `<li><button type="button" data-ch="${i}" ${i === idx ? 'aria-current="true"' : ""}>${esc(c.t)}</button></li>`).join("")}</ol>
+          ${/veil/.test(b.chapters.map(chapterHTML).join("")) ? `<button class="btn unseal" type="button">이 책의 봉인 모두 풀기</button>` : ""}
+        </div>
         <div class="pager"><span>Liber · ${b.latin.toLowerCase()}</span><span></span></div>
       </section>
-      <section class="page right${fresh ? "" : " turn"}">
-        <p class="ch-head">CAPITULUM ${["I", "II", "III", "IV", "V", "VI", "VII", "VIII", "IX", "X", "XI", "XII"][idx]} · ${esc(ch.t)}</p>
-        <div class="md">${chapterHTML(ch)}</div>
-        <div class="pager">${idx > 0 ? `<button type="button" data-ch="${idx - 1}">‹ 앞 장</button>` : "<span></span>"}<span>${idx + 1} / ${b.chapters.length}</span>${idx < b.chapters.length - 1 ? `<button type="button" data-ch="${idx + 1}">다음 장 ›</button>` : "<span></span>"}</div>
-      </section></div>`, (el) => {
-      el.querySelector(".reader").addEventListener("click", (e) => {
+      <section class="page right">${rightPage(b, idx)}</section></div>`, (el) => {
+      const reader = el.querySelector(".reader");
+      const right = reader.querySelector(".page.right");
+      // 종이 한 장이 책등을 축으로 넘어간다. 다음 장: 오른쪽 → 왼쪽 / 앞 장: 왼쪽 → 오른쪽
+      const turn = (to) => {
+        if (busy || to === cur) return;
+        busy = true;
+        const next = to > cur;
+        const leaf = document.createElement("section");
+        leaf.className = "page right leaf " + (next ? "leaf-next" : "leaf-prev");
+        leaf.style.cssText = `left:${right.offsetLeft}px;top:${right.offsetTop}px;width:${right.offsetWidth}px;height:${right.offsetHeight}px`;
+        if (next) { leaf.innerHTML = right.innerHTML; leaf.querySelector(".page-body").scrollTop = right.querySelector(".page-body").scrollTop; right.innerHTML = rightPage(b, to); }
+        else leaf.innerHTML = rightPage(b, to);
+        reader.appendChild(leaf);
+        leaf.addEventListener("animationend", () => { if (!next) right.innerHTML = rightPage(b, to); leaf.remove(); busy = false; }, { once: true });
+        cur = to;
+        $$(".toc [data-ch]", reader).forEach((x) => x.toggleAttribute("aria-current", +x.dataset.ch === to));
+        $$(".toc [aria-current]", reader).forEach((x) => x.setAttribute("aria-current", "true"));
+      };
+      reader.addEventListener("click", (e) => {
         const c = e.target.closest("[data-ch]");
-        if (c) openBook(id, +c.dataset.ch);
+        if (c) turn(+c.dataset.ch);
         if (e.target.closest(".unseal")) {
           if (b.sealed && !opened.has("book:" + id)) return ask("스포일러 주의", "세계의 가장 깊은 비밀이 적혀 있어요.", () => { remember("book:" + id); $$(".veil", el).forEach((v) => v.classList.add("open")); });
           $$(".veil", el).forEach((v) => v.classList.add("open"));
@@ -566,18 +641,26 @@ function openBook(id, idx = 0, fresh = false) {
 }
 
 // 인물 명부
-const ORDER = ["aurora", "somnium", "flumen", "hortus", "fornax", "tonans", "profundum", "concordia", "other", "ancient", "hidden"];
-const ORDER_NAME = { concordia: "콘코르디아 & 각 지역", other: "기관 · 원형종", ancient: "고대종", hidden: "멀린 & 모르간 · 스포일러" };
+const INST_NAME = { 의회: "의회 · 콘킬리움", 기록원: "기록원 · 타불라리움", 기사단: "기사단 · 오르도 풀구리스", 감찰국: "감찰국 · 비질리아", 우편국: "우편국 · 쿠르수스", "상인 연합": "메르카토르 조합", 관측소: "관측소 · 리멘", "마녀 회합": "마녀 회합 · 콘벤투스", 비밀결사: "비밀결사 · 칼리부르누스" };
+function rosterGroups() {
+  const all = Object.values(CHARS);
+  const by = (f) => all.filter(f);
+  const schools = ["aurora", "somnium", "flumen", "hortus", "fornax", "tonans", "profundum"];
+  return [
+    { h: "일곱 학파", subs: schools.map((k) => ({ t: GROUP_LABEL[k], list: by((c) => c.group === k) })) },
+    { h: "콘코르디아 & 각 지역", subs: [{ t: "", list: by((c) => c.group === "regional") }] },
+    { h: "아발론의 기관", subs: Object.keys(INST_NAME).map((a) => ({ t: INST_NAME[a], list: by((c) => c.group === "other" && c.aff === a) })) },
+    { h: "원형종", subs: [{ t: "각 지역의 고위 원형종", list: by((c) => c.group === "major") }] },
+    { h: "고대종", subs: [{ t: "일곱 고대종", list: by((c) => c.group === "ancient" && c.aff !== "용생구자") }, { t: "용생구자 아홉 형제", list: by((c) => c.aff === "용생구자") }] },
+    { h: "???", subs: [{ t: "", list: by((c) => c.group === "hidden") }] },
+  ];
+}
 function openRoster() {
-  const groups = {};
-  for (const c of Object.values(CHARS)) (groups[frameKey(c)] ||= []).push(c);
-  const sec = ORDER.filter((k) => groups[k]).map((k) => {
-    const label = ORDER_NAME[k] || GROUP_LABEL[k];
-    return `<h3>${esc(label)}</h3><div class="cards">${groups[k].map((c) => {
-      const veiled = (c.hidden && !opened.has("npc:" + c.name)) || (c.imgSpoiler && !opened.has("img:" + c.name));
-      return `<button type="button" data-npc="${esc(c.name)}" aria-label="${esc(c.hidden && veiled ? "스포일러 인물" : c.name)}">${card(c.hidden && veiled ? { ...c, name: "???" } : c, c.region ? RC[c.region].color : "#c8a050", { veil: veiled })}</button>`;
-    }).join("")}</div>`;
-  }).join("");
+  const cardBtn = (c) => {
+    const hideName = c.hidden;
+    return `<button type="button" data-npc="${esc(c.name)}" aria-label="${esc(hideName ? "스포일러 인물" : c.name)}">${card(c, c.region ? RC[c.region].color : "#c8a050", { veil: veiledImg(c.name), hideName })}</button>`;
+  };
+  const sec = rosterGroups().map((g) => `<h3>${esc(g.h)}</h3>` + g.subs.filter((x) => x.list.length).map((x) => `${x.t ? `<h4>${esc(x.t)}</h4>` : ""}<div class="cards">${x.list.map(cardBtn).join("")}</div>`).join("")).join("");
   layerBack = null;
   openLayer(`<div class="roster" role="dialog" aria-modal="true" aria-label="인물 명부"><button class="close" type="button" aria-label="닫기">✕</button>
     <p class="rlatin">LIBER PERSONARUM</p><h2>인물 명부</h2>${sec}</div>`, (el) => {
@@ -587,4 +670,4 @@ function openRoster() {
 
 // 첫 진입
 fit(false);
-if (location.hash === "#library") { enter(); setTimeout(showLibrary, 1800); }
+if (location.hash === "#library") { enter(); setTimeout(() => showLibrary(true), 1800); }

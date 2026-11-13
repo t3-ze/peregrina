@@ -113,7 +113,7 @@ export function frameKey(c) {
 
 let n = 0;
 // card(char, regionColor, {veil}) → SVG 문자열
-export function card(c, rc = "#c8a050", { veil = false, showTrue = false } = {}) {
+export function card(c, rc = "#c8a050", { veil = false, showTrue = false, hideName = false } = {}) {
   const key = frameKey(c);
   const f = F[key];
   const col = { base: f.base, line: f.line, acc: f.acc || rc };
@@ -139,11 +139,13 @@ export function card(c, rc = "#c8a050", { veil = false, showTrue = false } = {})
   s += f.crest(col);
   // 정보
   const sub = c.subtitle || "";
-  s += `<g class="pinfo">
-    <text x="62" y="470" font-family="IM Fell English SC, serif" font-size="13" letter-spacing="5" fill="${col.acc}">${f.latin}${c.group === "ancient" || key === "concordia" ? " · " + esc(c.regionLatin || "") : ""}</text>
-    <text x="60" y="${470 + nameSize + 4}" font-family="Diphylleia, serif" font-size="${nameSize}" fill="#f6f0dc">${esc(veil ? "???" : c.name)}</text>
-    <path d="M62,${484 + nameSize} h70" stroke="${col.acc}" stroke-width="1.4"/><path d="M136,${480 + nameSize} l4,4 l-4,4 l-4,-4Z" fill="${col.acc}"/>
-    <foreignObject x="58" y="${494 + nameSize}" width="248" height="${560 - 494 - nameSize}"><div xmlns="http://www.w3.org/1999/xhtml" class="psub">${esc(veil ? "스포일러가 포함된 인물" : sub)}</div></foreignObject>
+  const tag = f.latin + ((c.group === "ancient" || key === "concordia") && c.regionLatin && c.regionLatin !== f.latin ? " · " + esc(c.regionLatin) : "");
+  const ny = 470 + nameSize + 4;
+  s += `<g class="pinfo" text-anchor="middle">
+    <text x="${MX}" y="470" font-family="IM Fell English SC, serif" font-size="13" letter-spacing="5" fill="${col.acc}">${hideName ? "ARCANUM" : tag}</text>
+    <text x="${MX}" y="${ny}" font-family="KookminUniversitySunggokSerif, serif" font-size="${nameSize}" fill="#f6f0dc">${esc(hideName ? "???" : c.name)}</text>
+    <path d="M${MX - 64},${ny + 13} h56 M${MX + 8},${ny + 13} h56" stroke="${col.acc}" stroke-width="1.2"/><path d="M${MX},${ny + 8} l5,5 l-5,5 l-5,-5Z" fill="${col.acc}"/>
+    <foreignObject x="58" y="${ny + 22}" width="244" height="${566 - ny - 26}"><div xmlns="http://www.w3.org/1999/xhtml" class="psub">${esc(sub)}</div></foreignObject>
   </g></svg>`;
   return s;
 }
