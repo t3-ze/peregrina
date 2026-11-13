@@ -69,7 +69,7 @@ const F = {
   profundum: {
     latin: "PROFUNDUM", win: "keystone", base: "#6b5233", line: "#2a1e10", acc: "#c4a476",
     deco: (c) => [150, 300, 450].map((y) => `<circle cx="22" cy="${y}" r="15" fill="${c.acc}" stroke="${c.line}" stroke-width="1.2"/><circle cx="22" cy="${y}" r="10" fill="${c.base}" stroke="${c.line}" stroke-width="1"/><circle cx="24" cy="${y + 2}" r="5" fill="${c.acc}" stroke="${c.line}" stroke-width="1"/>`).join("") +
-      `<path d="M0,556 H160 V600 H0Z" fill="#54402a" stroke="${c.line}" stroke-width="1.2"/><path d="M0,574 H160" stroke="${c.line}" stroke-width=".8"/>`,
+      `<path d="M0,556 H160 V600 H0Z" fill="#54402a" stroke="${c.line}" stroke-width="1.2"/>`,
     crest: (c) => `<path d="M${MX - 22},8 H${MX + 22} L${MX + 14},60 H${MX - 14}Z" fill="${c.acc}" stroke="${c.line}" stroke-width="1.4"/><circle cx="${MX}" cy="24" r="7" fill="${c.base}" stroke="${c.line}" stroke-width="1"/><path d="M${MX - 2},30 h4 v20 h5 v4 h-5 v3 h-4Z" fill="${c.base}" stroke="${c.line}" stroke-width=".8"/>`,
   },
   concordia: {
@@ -113,6 +113,8 @@ export function frameKey(c) {
 
 let n = 0;
 // card(char, regionColor, {veil}) → SVG 문자열
+const unline = (str) => str.replace(/<(path|rect|circle|ellipse)\b([^>]*?)\/>/g, (m, tag, attrs) =>
+  /fill="(?!none)[^"]+"/.test(attrs) && /\sstroke="/.test(attrs) ? `<${tag}${attrs.replace(/\s(stroke|stroke-width|stroke-linejoin|stroke-linecap)="[^"]*"/g, "")}/>` : m);
 export function card(c, rc = "#c8a050", { veil = false, showTrue = false, hideName = false } = {}) {
   const key = frameKey(c);
   const f = F[key];
@@ -128,15 +130,14 @@ export function card(c, rc = "#c8a050", { veil = false, showTrue = false, hideNa
     <linearGradient id="${id}g" x1="0" y1="1" x2="0" y2="0"><stop offset="0" stop-color="#07060a" stop-opacity=".94"/><stop offset=".34" stop-color="#07060a" stop-opacity=".6"/><stop offset=".62" stop-color="#07060a" stop-opacity="0"/></linearGradient>
     <filter id="${id}b"><feGaussianBlur stdDeviation="14"/></filter>
   </defs>`;
-  if (f.back) s += f.back(col);
-  s += `${grow(win, 1.13, 1.055)} fill="${col.base}" stroke="${col.line}" stroke-width="1.6"/>`;
-  s += `${grow(win, 1.065, 1.028)} fill="none" stroke="${col.acc}" stroke-width="1.2"/>`;
-  s += mirror(f.deco(col));
+  // 프레임 장식은 면만 남기고 외곽선은 뺀다(선으로만 그린 덩굴 같은 건 그대로)
+  if (f.back) s += unline(f.back(col));
+  s += `${grow(win, 1.13, 1.055)} fill="${col.base}"/>`;
+  s += unline(mirror(f.deco(col)));
   s += `<g clip-path="url(#${id}w)"><rect x="0" y="0" width="${CW}" height="${CH}" fill="#1a1620"/>`;
   if (img) s += `<image href="${img}" x="40" y="20" width="280" height="560" preserveAspectRatio="xMidYMin slice" ${veil ? `filter="url(#${id}b)"` : ""}/>`;
   s += `<rect x="0" y="0" width="${CW}" height="${CH}" fill="url(#${id}g)"/></g>`;
-  s += `<path d="${win}" fill="none" stroke="${col.line}" stroke-width="2"/><path d="${win}" fill="none" stroke="${col.acc}" stroke-width=".8" transform="translate(${MX},300) scale(.985,.992) translate(${-MX},-300)"/>`;
-  s += f.crest(col);
+  s += unline(f.crest(col));
   // 정보
   const sub = c.subtitle || "";
   const tag = f.latin + ((c.group === "ancient" || key === "concordia") && c.regionLatin && c.regionLatin !== f.latin ? " · " + esc(c.regionLatin) : "");
