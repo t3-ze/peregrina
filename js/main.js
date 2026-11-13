@@ -41,6 +41,22 @@ const SITE_FIELDS = {
   ],
 };
 for (const [id, f] of Object.entries(SITE_FIELDS)) SITE[id].fields = f.map((x) => ({ ...x, spoiler: false }));
+// 지역 설명의 '주요 장소' 목록: 로어북에서 첫 항목과 NPC 조우 항목이 같은 곳을 가리켜 중복되고, 줄바꿈이 빠진 곳이 있었다. 정리해서 덮어쓴다.
+const REGION_PLACES = {
+  arcadia: "동쪽 끝 절벽의 재의 제단: 불사조 NPC '헬리아' 조우 가능\n치유의 샘(용생구자 공복이 관리)\n성소의 향로(산예가 머무는 곳)\n아우로라의 새벽 기도실",
+  lunatica: "숲 한가운데의 달빛 절구터: 달토끼 NPC '소월' 조우 가능\n숲 입구의 등불 초소(노엘이 지킨다)\n매일 모양이 바뀌는 오솔길\n월식의 밤에만 하나로 고정되는 길",
+  mercurius: "운하 바깥의 잠긴 종탑: 이무기 NPC '청류' 조우 가능\n대운하 시장 다리\n뒷골목 골동품 가게\n쿠르수스 분실 우편 보관소",
+  venustas: "변두리의 버려진 온실: 페리 NPC '나르기스' 조우 가능\n학생들이 한 구획씩 가꾸는 학파 정원\n원장실 한가운데의 월계수\n변두리의 약초 가게\n황금 사과의 정원 입구",
+  martialis: "투기장 너머 창의 언덕: 발키리 NPC '힐드' 조우 가능\n대장간 거리\n산맥 아래 마을의 투기장\n산맥 정상의 화구",
+  jupiter: "바깥 성벽 끝의 폭풍 망루: 기린 NPC '휘린' 조우 가능\n내성의 의회당\n성벽길 역마차 출발지\n가루다의 탑",
+  saturnus: "금서고 계단 끝의 닫힌 문: 스핑크스 NPC '네페르' 조우 가능\n가고일이 지키는 서고 입구\n마정석 광산\n금서고로 내려가는 계단",
+};
+for (const r of REGIONS) {
+  const v = REGION_PLACES[r.id];
+  if (!v) continue;
+  const f = r.fields.find((x) => x.k === "주요 장소");
+  if (f) f.v = v;
+}
 for (const c of Object.values(CHARS)) c.regionLatin = c.region ? RC[c.region].latin : "";
 const WHERE = {};
 for (const s of ALL_SITES) for (const n of new Set(s.npcs)) (WHERE[n] ||= []).push(s.id);
