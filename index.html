@@ -10,8 +10,8 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;700&family=Cinzel+Decorative:wght@400;700&family=IM+Fell+English:ital@0;1&family=IM+Fell+English+SC&family=Nanum+Myeongjo:wght@400;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
-<!-- 다시 온 사람은 편지 장면을 건너뛴다(스크립트가 뜨기 전 잠깐 비치는 것도 막는다) -->
-<script>try { if (localStorage.getItem("peregrina-visited") === "1") document.documentElement.classList.add("visited"); } catch (e) {}</script>
+<!-- 같은 탭에서 새로고침하면 편지 장면을 건너뛴다(스크립트가 뜨기 전 잠깐 비치는 것도 막는다) -->
+<script>try { if (sessionStorage.getItem("peregrina-visited") === "1") document.documentElement.classList.add("visited"); } catch (e) {}</script>
 <style>.visited #opening { display: none; }</style>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230a0d1e'/%3E%3Cpath d='M32 6 L37 27 L58 32 L37 37 L32 58 L27 37 L6 32 L27 27Z' fill='%23c8a050'/%3E%3C/svg%3E">
 </head>

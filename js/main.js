@@ -139,7 +139,7 @@ function enter() {
   if (entered) return;
   entered = true;
   opStage = 1;
-  try { localStorage.setItem("peregrina-visited", "1"); } catch {} // 다음부터는 편지 장면을 건너뛴다
+  try { sessionStorage.setItem("peregrina-visited", "1"); } catch {} // 이 탭에서 새로고침하면 편지 장면을 건너뛴다(탭·창을 닫으면 기록이 사라져 다시 나온다)
   const op = $("#opening");
   bgm.start();
   op.classList.add("open");                                                    // 봉인이 갈라지고 덮개가 열리며 편지가 올라온다
@@ -758,10 +758,10 @@ function openRoster() {
   });
 }
 
-// 첫 진입: 편지 장면은 처음 방문했을 때만. 한 번 봉인을 연 적이 있으면 바로 지도로 들어간다.
+// 첫 진입: 편지 장면은 탭을 새로 열어 들어왔을 때만. 같은 탭에서 새로고침하면 바로 지도로 들어간다.
 fit(false);
 let visited = false;
-try { visited = localStorage.getItem("peregrina-visited") === "1"; } catch {}
+try { visited = sessionStorage.getItem("peregrina-visited") === "1"; } catch {}
 if (visited) {
   entered = true;
   opStage = 3;
