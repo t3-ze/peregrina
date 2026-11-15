@@ -8,6 +8,9 @@ import { card, GROUP_LABEL, frameKey } from "./frames.js";
 import { noiseURL, esc, smoothClosed, bbox, rng } from "./util.js";
 import { emblem } from "./emblems.js";
 import "./cursor.js";
+
+// 휴대폰·태블릿: 반짝이는 별(각자 합성 레이어가 된다) 수를 줄여 GPU 부담을 덜어 준다
+const LITE = matchMedia("(max-width: 860px), (pointer: coarse)").matches;
 import "./sfx.js";
 import * as bgm from "./bgm.js";
 
@@ -102,7 +105,7 @@ $(".op-moon").innerHTML = `<svg viewBox="0 0 120 120"><path d="M74,10 A52,52 0 1
 {
   const R = rng(1225);
   let h = "";
-  for (let i = 0; i < 140; i++) {
+  for (let i = 0; i < (LITE ? 70 : 140); i++) {
     const big = R() < 0.12;
     h += `<i class="${big ? "st big" : "st"}" style="left:${(R() * 100).toFixed(2)}%;top:${(R() * 100).toFixed(2)}%;animation-delay:${(R() * 5).toFixed(2)}s;animation-duration:${(3 + R() * 4).toFixed(2)}s"></i>`;
   }
@@ -158,13 +161,13 @@ document.addEventListener("keydown", (e) => { if (e.key !== "Enter" && e.key !==
 const nightSky = (() => {
   const R = rng(4040);
   let h = "";
-  for (let i = 0; i < 220; i++) {
+  for (let i = 0; i < (LITE ? 140 : 220); i++) {
     const t = R(), size = t < 0.7 ? 1 : t < 0.93 ? 2 : 3;
-    const tw = R() < 0.35 ? ` tw" style="animation-delay:${(R() * 6).toFixed(2)}s;animation-duration:${(3 + R() * 4).toFixed(2)}s;` : `" style="opacity:${(0.35 + R() * 0.6).toFixed(2)};`;
+    const tw = R() < (LITE ? 0.2 : 0.35) ? ` tw" style="animation-delay:${(R() * 6).toFixed(2)}s;animation-duration:${(3 + R() * 4).toFixed(2)}s;` : `" style="opacity:${(0.35 + R() * 0.6).toFixed(2)};`;
     h += `<i class="ns s${size}${tw}left:${(R() * 100).toFixed(2)}%;top:${(R() * 100).toFixed(2)}%"></i>`;
   }
   // 별똥별: 길이·굵기·머리 크기·각도·속도·주기를 제각각
-  for (let i = 0; i < 9; i++) {
+  for (let i = 0; i < (LITE ? 5 : 9); i++) {
     const big = R() < 0.25;
     const len = big ? 220 + R() * 160 : 70 + R() * 140, th = big ? 2 + R() * 1.4 : 0.8 + R() * 1.2;
     const head = th * (2.2 + R() * 1.4), ang = -(18 + R() * 22), dist = 280 + R() * 420;
@@ -496,7 +499,7 @@ function buildShelf() {
       if (t) {
         t.done = true;
         const h = rowH * (0.8 + R() * 0.08) - 16;
-        html += `<button class="book glow" type="button" data-book="${t.b.id}" style="width:48px;height:${h}px" aria-label="${esc(t.b.title)} 펼치기"><span class="em">${emblem(t.b.id, 22)}</span><span class="sp"><span class="tt">${esc(t.b.title)}</span><span class="lt">${t.b.latin}</span></span>${[0, 1, 2].map((m) => `<i class="mote" style="left:${8 + m * 14}px;top:${20 + m * 30}%;animation-delay:${m * 1.6}s"></i>`).join("")}</button>`;
+        html += `<button class="book glow" type="button" data-book="${t.b.id}" style="width:48px;height:${h}px" aria-label="${esc(t.b.title)} 펼치기"><span class="halo" aria-hidden="true"></span><span class="em">${emblem(t.b.id, 22)}</span><span class="sp"><span class="tt">${esc(t.b.title)}</span><span class="lt">${t.b.latin}</span></span>${[0, 1, 2].map((m) => `<i class="mote" style="left:${8 + m * 14}px;top:${20 + m * 30}%;animation-delay:${m * 1.6}s"></i>`).join("")}</button>`;
         x += 50;
         continue;
       }

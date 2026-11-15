@@ -246,6 +246,9 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .site-sheet { grid-template-columns: minmax(0, 1.55fr) minmax(300px, 1fr); grid-template-rows: minmax(0, 1fr); height: min(860px, 94vh); }
 .site-plan { position: relative; overflow: hidden; background: #e9dfc6; min-height: 0; border-right: 3px solid var(--ink); }
 .site-plan svg { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+/* 흔들리는 인물 표식만 따로 합성 → 도면은 한 번만 그린다 */
+.site-plan svg.section-pins { will-change: transform; pointer-events: none; }
+.site-plan svg.section-pins .npc-pin { pointer-events: all; }
 .site-plan .npc-pin { cursor: pointer; }
 .site-plan .npc-pin > circle:first-of-type { transition: r .2s; }
 .site-plan .npc-pin:hover, .site-plan .npc-pin:focus { filter: drop-shadow(0 0 6px rgba(200, 160, 80, .9)); }
@@ -315,9 +318,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .book { position: relative; flex: none; transform-origin: bottom center; box-shadow: inset -4px 0 0 rgba(0, 0, 0, .28), inset 3px 0 0 rgba(255, 255, 255, .05), 3px 0 5px rgba(0, 0, 0, .45); }
 .book .band { position: absolute; left: 0; right: 0; height: 3px; background: rgba(200, 160, 80, .35); }
 .book.lean { transform: rotate(-4deg); margin-left: 6px; }
-.book.glow { cursor: pointer; background: #efe2bf; color: var(--ink); border: 0; box-shadow: 0 0 14px 3px rgba(240, 210, 130, .55), 0 0 40px 10px rgba(240, 210, 130, .18); transition: transform .4s var(--ease), box-shadow .4s; display: flex; flex-direction: column; align-items: center; padding: 10px 0 8px; z-index: 1; animation: pulse 3.4s ease-in-out infinite; }
+.book.glow { cursor: pointer; background: #efe2bf; color: var(--ink); border: 0; box-shadow: 0 0 8px 2px rgba(240, 210, 130, .4), 0 0 26px 6px rgba(240, 210, 130, .1); transition: transform .4s var(--ease), box-shadow .4s; display: flex; flex-direction: column; align-items: center; padding: 10px 0 8px; z-index: 1; }
 .book.glow:hover, .book.glow:focus-visible { transform: translateY(-14px); box-shadow: 0 0 20px 6px rgba(246, 225, 150, .8), 0 0 60px 18px rgba(240, 210, 130, .3); }
-@keyframes pulse { 50% { box-shadow: 0 0 8px 2px rgba(240, 210, 130, .4), 0 0 26px 6px rgba(240, 210, 130, .1); } }
+/* 맥박치는 빛: 그림자 자체를 움직이면 매 프레임 다시 그려야 하므로, 센 빛을 따로 깔고 투명도만 바꾼다 */
+.book.glow .halo { position: absolute; inset: 0; pointer-events: none; box-shadow: 0 0 14px 3px rgba(240, 210, 130, .55), 0 0 40px 10px rgba(240, 210, 130, .18); animation: pulse 3.4s ease-in-out infinite; }
+@keyframes pulse { 50% { opacity: 0; } }
 .book.glow .em { display: block; line-height: 0; color: var(--crimson); --em-bg: #efe2bf; }
 .book.glow .sp { flex: 1; min-height: 0; display: flex; flex-direction: row; align-items: flex-start; justify-content: center; gap: 2px; margin: 6px 0 4px; overflow: hidden; }
 .book.glow .tt { writing-mode: vertical-rl; text-orientation: upright; white-space: nowrap; font-family: var(--title-kr); font-size: 16px; letter-spacing: .04em; }
@@ -411,6 +416,16 @@ button { font: inherit; color: inherit; cursor: pointer; }
   #libBack { left: 16px; }
     .mh-sub { display: none; }
 }
+/* ───────── 휴대폰·태블릿 성능 ─────────
+   - 배경 원반: 데스크톱용 최소 1400px을 빼서, 도는 레이어 네 장의 GPU 메모리를 줄인다
+   - 지도 펼침: clip-path 애니메이션은 매 프레임 지도 전체를 다시 그리므로 투명도로만 나타낸다
+   - 대륙 떠오름: SVG 안의 transition은 합성되지 않아 확대와 겹치면 매 프레임 표식 레이어 전체를 다시 그린다 → 즉시 바꾼다 */
+@media (max-width: 860px), (pointer: coarse) {
+  .sky-in { width: 150vmax; height: 150vmax; will-change: auto; }
+  #world.intro #sheet { animation-name: unfoldLite; }
+  #mapfx .lift-land, #mapfx .lift-shadow, #mapfx .sites, #mapfx #dim, #mapfx .site .site-label { transition: none; }
+}
+@keyframes unfoldLite { from { opacity: 0; } to { opacity: 1; } }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
 }
@@ -429,12 +444,13 @@ a, button, [role="button"], label, select, summary, .hit, .site, .letter, .book.
 #bgmBtn:hover { background: var(--gold); color: var(--night); }
 #bgmBtn svg { width: 20px; height: 20px; }
 #bgmBtn .bars { display: flex; align-items: flex-end; gap: 2px; height: 14px; }
-#bgmBtn .bars i { width: 3px; height: 4px; background: currentColor; border-radius: 1px; }
+#bgmBtn .bars i { width: 3px; height: 14px; background: currentColor; border-radius: 1px; transform: scaleY(.29); transform-origin: bottom; }
 #bgmBtn.on .mute { display: none; }
 #bgmBtn.on .bars i { animation: bgmBar 1s ease-in-out infinite; }
 #bgmBtn.on .bars i:nth-child(2) { animation-delay: .25s; }
 #bgmBtn.on .bars i:nth-child(3) { animation-delay: .5s; }
-@keyframes bgmBar { 0%, 100% { height: 4px; } 50% { height: 14px; } }
+/* 높이 대신 scaleY로 움직여 음악이 도는 동안 매 프레임 레이아웃을 다시 하지 않게 한다 */
+@keyframes bgmBar { 0%, 100% { transform: scaleY(.29); } 50% { transform: scaleY(1); } }
 
 /* ───────── 책장 넘김 화면 전환 ───────── */
 #world.turn-away, #world.turn-back { z-index: 30; transform-origin: left center; backface-visibility: hidden; pointer-events: none; }

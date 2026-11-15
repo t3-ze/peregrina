@@ -705,7 +705,9 @@ export function drawSection(site, CHARS, color, isVeiled) {
       <text x="${r.x + r.w / 2}" y="${r.y + ceilRise(r, f.ceil) * 0.6 + 26}" text-anchor="middle" font-family="KookminUniversitySunggokSerif, serif" font-size="18" fill="${lightText ? "#f4e9cd" : "#2c2015"}">${esc(f.t)}</text></g>`;
   });
 
-  // 인물 표식
+  // 인물 표식: 위아래로 흔들리므로 도면과 다른 SVG(자기 합성 레이어)에 그린다.
+  // 같은 SVG에 두면 흔들릴 때마다 그림자 필터가 걸린 도면 전체를 매 프레임 다시 그려서 모바일에서 버벅인다.
+  o += `</svg><svg class="section-pins" viewBox="0 0 ${VW} ${VH}" xmlns="http://www.w3.org/2000/svg"><defs><filter id="${id}pb"><feGaussianBlur stdDeviation="5"/></filter></defs>`;
   for (const p of pins) {
     const c = CHARS[p.name];
     const clip = `${id}c${pins.indexOf(p)}`;
@@ -717,7 +719,7 @@ export function drawSection(site, CHARS, color, isVeiled) {
       <path d="M0,-2 l-10,-20 h20z" fill="${color}"/>
       <circle cy="-52" r="33" fill="${color}"/><circle cy="-52" r="28" fill="#f4e9cd"/>
       <clipPath id="${clip}"><circle cy="-52" r="26"/></clipPath>
-      ${img ? `<image href="${img}" x="-30" y="-82" width="60" height="88" preserveAspectRatio="xMidYMin slice" clip-path="url(#${clip})" ${veiled ? `filter="url(#${id}b)"` : ""}/>` : ""}
+      ${img ? `<image href="${img}" x="-30" y="-82" width="60" height="88" preserveAspectRatio="xMidYMin slice" clip-path="url(#${clip})" ${veiled ? `filter="url(#${id}pb)"` : ""}/>` : ""}
       <g transform="translate(0,-96)"><rect x="${-label.length * 9 - 14}" y="-14" width="${label.length * 18 + 28}" height="26" rx="13" fill="#2c2015" opacity=".88"/><text y="5" text-anchor="middle" font-family="KookminUniversitySunggokSerif, serif" font-size="16" fill="#f4e9cd">${esc(label)}</text></g>
     </g>`;
   }
