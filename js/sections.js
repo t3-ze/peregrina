@@ -719,7 +719,8 @@ export function drawSection(site, CHARS, color, isVeiled) {
       <path d="M0,-2 l-10,-20 h20z" fill="${color}"/>
       <circle cy="-52" r="33" fill="${color}"/><circle cy="-52" r="28" fill="#f4e9cd"/>
       <clipPath id="${clip}"><circle cy="-52" r="26"/></clipPath>
-      ${img ? `<image href="${img}" x="-30" y="-82" width="60" height="88" preserveAspectRatio="xMidYMin slice" clip-path="url(#${clip})" ${veiled ? `filter="url(#${id}pb)"` : ""}/>` : ""}
+      ${/* 그림 상자를 동그란 창(중심 0,-52 · 반지름 26)과 같은 정사각형으로 두고 정중앙 기준으로 채운다 */ ""}
+      ${img ? `<image href="${img}" x="-26" y="-78" width="52" height="52" preserveAspectRatio="xMidYMid slice" clip-path="url(#${clip})" ${veiled ? `filter="url(#${id}pb)"` : ""}/>` : ""}
       <g transform="translate(0,-96)"><rect x="${-label.length * 9 - 14}" y="-14" width="${label.length * 18 + 28}" height="26" rx="13" fill="#2c2015" opacity=".88"/><text y="5" text-anchor="middle" font-family="KookminUniversitySunggokSerif, serif" font-size="16" fill="#f4e9cd">${esc(label)}</text></g>
     </g>`;
   }
