@@ -745,10 +745,9 @@ function rosterGroups() {
   ];
 }
 function openRoster() {
-  const center = matchMedia("(max-width: 860px)").matches; // 모바일: 작은 카드라 그림을 창 정중앙에 맞춘다
   const cardBtn = (c) => {
     const hideName = c.hidden;
-    return `<button type="button" data-npc="${esc(c.name)}" aria-label="${esc(hideName ? "스포일러 인물" : c.name)}">${card(c, c.region ? RC[c.region].color : "#c8a050", { veil: veiledImg(c.name), hideName, center })}</button>`;
+    return `<button type="button" data-npc="${esc(c.name)}" aria-label="${esc(hideName ? "스포일러 인물" : c.name)}">${card(c, c.region ? RC[c.region].color : "#c8a050", { veil: veiledImg(c.name), hideName })}</button>`;
   };
   const sec = rosterGroups().map((g) => `<h3>${esc(g.h)}</h3>` + g.subs.filter((x) => x.list.length).map((x) => `${x.t ? `<h4>${esc(x.t)}</h4>` : ""}<div class="cards">${x.list.map(cardBtn).join("")}</div>`).join("")).join("");
   layerBack = null;
