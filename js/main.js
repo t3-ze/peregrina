@@ -669,9 +669,20 @@ function openBook(id, idx = 0, fresh = false) {
         </div>
         <div class="pager"><span>Liber · ${b.latin.toLowerCase()}</span><span></span></div>
       </section>
+      <div class="bk-bar" style="--bk:${b.color}">
+        <span class="bk-bar-em" aria-hidden="true">${emblem(b.id, 24)}</span>
+        <span class="bk-bar-t"><b>${esc(b.title)}</b><small class="bk-bar-ch">${ROMAN[idx]} · ${esc(b.chapters[idx].t)}</small></span>
+        <button class="bk-toc-btn" type="button" aria-expanded="false"><span>목차</span><i aria-hidden="true">▾</i></button>
+        <button class="close bk-bar-close" type="button" aria-label="책 덮기">✕</button>
+      </div>
       <section class="page right">${rightPage(b, idx)}</section></div>`, (el) => {
       const reader = el.querySelector(".reader");
       const right = reader.querySelector(".page.right");
+      // 좁은 화면: 책 이름·목차(왼쪽 장)는 접어 두고, 위 띠의 '목차'를 누르면 펼친다
+      const tocBtn = reader.querySelector(".bk-toc-btn");
+      const setToc = (open) => { reader.classList.toggle("toc-open", open); tocBtn.setAttribute("aria-expanded", open); };
+      tocBtn.addEventListener("click", () => setToc(!reader.classList.contains("toc-open")));
+      right.addEventListener("click", () => setToc(false));
       // 종이 한 장이 책등을 축으로 넘어간다. 다음 장: 오른쪽 → 왼쪽 / 앞 장: 왼쪽 → 오른쪽
       const turn = (to) => {
         if (busy || to === cur) return;
@@ -685,6 +696,9 @@ function openBook(id, idx = 0, fresh = false) {
         reader.appendChild(leaf);
         leaf.addEventListener("animationend", () => { if (!next) right.innerHTML = rightPage(b, to); leaf.remove(); busy = false; }, { once: true });
         cur = to;
+        reader.querySelector(".bk-bar-ch").textContent = `${ROMAN[to]} · ${b.chapters[to].t}`;
+        setToc(false);
+        right.querySelector(".page-body") && (right.querySelector(".page-body").scrollTop = 0);
         $$(".toc [data-ch]", reader).forEach((x) => x.toggleAttribute("aria-current", +x.dataset.ch === to));
         $$(".toc [aria-current]", reader).forEach((x) => x.setAttribute("aria-current", "true"));
       };

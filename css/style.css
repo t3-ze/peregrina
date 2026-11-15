@@ -358,6 +358,27 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .reader .leaf-prev { animation: leafPrev .7s cubic-bezier(.45, .05, .3, 1) forwards; }
 @keyframes leafNext { from { transform: rotateY(0); } to { transform: rotateY(-180deg); } }
 @keyframes leafPrev { from { transform: rotateY(-180deg); } to { transform: rotateY(0); } }
+@keyframes leafSlideNext { from { transform: none; opacity: 1; } to { transform: translateX(-40%) rotate(-2deg); opacity: 0; } }
+@keyframes leafSlidePrev { from { transform: translateX(-40%) rotate(-2deg); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* 좁은 화면 전용: 책 위의 띠 (책 이름 · 지금 장 · 목차 단추 · 덮기) */
+.reader { --bar-h: 58px; }
+.bk-bar { display: none; position: relative; z-index: 7; height: var(--bar-h); align-items: center; gap: 10px; padding: 0 6px 0 10px;
+  background: var(--bk); color: var(--gold-pale); border: 2px solid #0b0706; border-bottom: 0;
+  box-shadow: inset 0 0 0 3px var(--bk), inset 0 0 0 4px rgba(232, 200, 120, .55); }
+.bk-bar-em { flex: none; width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; color: var(--gold-pale);
+  border: 1.5px solid rgba(232, 200, 120, .7); box-shadow: 0 0 0 2.5px var(--bk), 0 0 0 3.5px rgba(232, 200, 120, .4); --em-bg: var(--bk); }
+.bk-bar-em svg { width: 22px; height: 22px; }
+.bk-bar-t { flex: 1; min-width: 0; display: flex; flex-direction: column; line-height: 1.25; }
+.bk-bar-t b { font-family: var(--title-kr); font-weight: 400; font-size: 17px; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.bk-bar-ch { font-family: var(--serif-kr); font-size: 11.5px; opacity: .8; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+/* 목차 단추: 책장 사이에 꽂힌 종이 쪽지 */
+.bk-toc-btn { flex: none; display: flex; align-items: center; gap: 4px; height: 34px; padding: 0 12px 0 14px; background: var(--paper-3); color: var(--ink); border: 1.5px solid #0b0706;
+  font-family: var(--title-kr); font-size: 14px; clip-path: polygon(8px 0, 100% 0, 100% 100%, 8px 100%, 0 50%); }
+.bk-toc-btn i { font-style: normal; font-size: 11px; transition: transform .3s var(--ease); }
+.bk-toc-btn[aria-expanded="true"] { background: var(--gold-pale); }
+.bk-toc-btn[aria-expanded="true"] i { transform: rotate(180deg); }
+.bk-bar .bk-bar-close { position: static; flex: none; width: 40px; height: 40px; background: transparent; color: var(--gold-pale); clip-path: none; padding: 0; font-size: 18px; }
 .bk-emblem { width: 92px; height: 92px; margin: 26px auto 10px; border-radius: 50%; display: grid; place-items: center; font-size: 40px; color: var(--paper-3); border: 3px solid var(--ink); box-shadow: 0 0 0 6px var(--paper-3), 0 0 0 7.5px var(--ink); }
 .bk-title { font-family: var(--title-kr); font-size: 36px; font-weight: 400; text-align: center; margin: 18px 0 2px; }
 .bk-latin { font-family: var(--fell-sc); text-align: center; letter-spacing: .4em; font-size: 13px; color: var(--ink-soft); margin: 0; }
@@ -413,20 +434,31 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .npc-photo { border-right: 0; border-bottom: 3px solid var(--ink); height: calc(62 * var(--vh)); }
   #overlay { padding: calc(12px + env(safe-area-inset-top, 0px)) calc(12px + env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) calc(12px + env(safe-area-inset-left, 0px)); }
   .sheet { max-height: calc(96 * var(--vh)); }
-  /* 책: 왼쪽 장(문양·제목·목차)이 위, 본문이 아래. 왼쪽 장은 내용만큼(최대 화면 42%) 차지하고 각자 스크롤한다.
-     예전엔 행 높이가 본문에 몰려 왼쪽 장이 80px 남짓으로 눌렸다. */
+  /* 책: 본문이 화면을 다 쓰고, 책 이름·목차(왼쪽 장)는 위 띠의 '목차'를 누르면 내려오는 접이식 장이 된다 */
   .reader { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); height: calc(94 * var(--vh)); padding: 10px; }
-  .reader .page { overflow: hidden; }
-  .reader .page.left { max-height: calc(42 * var(--vh)); border-right: 1.5px solid #8a7550; border-bottom: 0; box-shadow: inset 0 -18px 0 -14px rgba(60, 40, 20, .25); }
-  .reader .page.right { border-left: 1.5px solid #8a7550; border-top: 0; box-shadow: inset 0 18px 0 -14px rgba(60, 40, 20, .25); }
-  .reader .page-body { padding: 30px 26px 16px; }
+  .reader .bk-bar { display: flex; grid-row: 1; }
+  .reader .page.right { grid-row: 2; overflow: hidden; border-left: 1.5px solid #8a7550; border-top: 0; box-shadow: none; }
+  .reader .page.left { position: absolute; z-index: 6; left: 10px; right: 10px; top: calc(10px + var(--bar-h)); max-height: calc(100% - 20px - var(--bar-h) - 40px); overflow: hidden;
+    border: 1.5px solid #8a7550; border-top: 0; box-shadow: 0 16px 30px rgba(0, 0, 0, .45);
+    transform-origin: top center; transform: scaleY(.6); opacity: 0; visibility: hidden; pointer-events: none;
+    transition: transform .35s var(--ease), opacity .25s, visibility 0s .35s; }
+  .reader.toc-open .page.left { transform: none; opacity: 1; visibility: visible; pointer-events: auto; transition: transform .35s var(--ease), opacity .25s, visibility 0s; }
+  .reader .page.left > .close, .reader .page.left > .pager { display: none; }
+  /* 목차를 펼치면 본문을 어둡게 */
+  .reader .page.right::after { content: ""; position: absolute; inset: 0; background: rgba(20, 12, 8, .45); opacity: 0; pointer-events: none; transition: opacity .3s; }
+  .reader.toc-open .page.right::after { opacity: 1; pointer-events: auto; }
+  .reader .page-body { padding: 28px 24px 16px; }
   .reader .page::before { inset: 9px; }
-  .bk-emblem { width: 60px; height: 60px; margin: 4px auto 6px; font-size: 26px; box-shadow: 0 0 0 4px var(--paper-3), 0 0 0 5.5px var(--ink); }
+  /* 한 쪽만 보이므로 책등을 축으로 넘기는 대신 옆으로 밀려나며 넘어간다 */
+  .reader .leaf { z-index: 5; box-shadow: -6px 0 18px rgba(0, 0, 0, .3); }
+  .reader .leaf-next { animation: leafSlideNext .45s cubic-bezier(.45, .05, .3, 1) forwards; }
+  .reader .leaf-prev { animation: leafSlidePrev .45s cubic-bezier(.45, .05, .3, 1) forwards; }
+  .bk-emblem { width: 60px; height: 60px; margin: 2px auto 6px; font-size: 26px; box-shadow: 0 0 0 4px var(--paper-3), 0 0 0 5.5px var(--ink); }
   .bk-emblem svg { width: 36px; height: 36px; }
   .bk-title { font-size: 26px; margin: 10px 0 2px; }
   .bk-latin { font-size: 11px; letter-spacing: .3em; }
-  .toc { margin-top: 14px; }
-  .toc button { padding: 7px 4px; font-size: 14.5px; }
+  .toc { margin-top: 12px; }
+  .toc button { padding: 8px 4px; font-size: 14.5px; }
   .pager { margin: 0 20px 12px; }
   .page { overflow: visible; }
 
