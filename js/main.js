@@ -139,6 +139,7 @@ function enter() {
   if (entered) return;
   entered = true;
   opStage = 1;
+  try { localStorage.setItem("peregrina-visited", "1"); } catch {} // 다음부터는 편지 장면을 건너뛴다
   const op = $("#opening");
   bgm.start();
   op.classList.add("open");                                                    // 봉인이 갈라지고 덮개가 열리며 편지가 올라온다
@@ -757,6 +758,20 @@ function openRoster() {
   });
 }
 
-// 첫 진입
+// 첫 진입: 편지 장면은 처음 방문했을 때만. 한 번 봉인을 연 적이 있으면 바로 지도로 들어간다.
 fit(false);
-if (location.hash === "#library") { enter(); setTimeout(() => showLibrary(true), 1800); }
+let visited = false;
+try { visited = localStorage.getItem("peregrina-visited") === "1"; } catch {}
+if (visited) {
+  entered = true;
+  opStage = 3;
+  $("#opening").remove();
+  $("#world").classList.add("on");
+  // 브라우저는 누르기 전 소리를 막으므로, 배경 음악은 화면을 처음 누를 때 시작한다(음악을 꺼 둔 사람은 그대로 꺼짐)
+  const firstTap = (e) => {
+    removeEventListener("pointerdown", firstTap, true);
+    if (!e.target.closest?.("#bgmBtn")) bgm.start(); // 음악 버튼을 처음 누른 경우는 버튼이 알아서 켠다
+  };
+  addEventListener("pointerdown", firstTap, true);
+  if (location.hash === "#library") showLibrary(true);
+} else if (location.hash === "#library") { enter(); setTimeout(() => showLibrary(true), 1800); }
