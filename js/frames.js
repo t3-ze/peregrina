@@ -115,7 +115,8 @@ let n = 0;
 // card(char, regionColor, {veil}) → SVG 문자열
 const unline = (str) => str.replace(/<(path|rect|circle|ellipse)\b([^>]*?)\/>/g, (m, tag, attrs) =>
   /fill="(?!none)[^"]+"/.test(attrs) && /\sstroke="/.test(attrs) ? `<${tag}${attrs.replace(/\s(stroke|stroke-width|stroke-linejoin|stroke-linecap)="[^"]*"/g, "")}/>` : m);
-export function card(c, rc = "#c8a050", { veil = false, showTrue = false, hideName = false } = {}) {
+// center: 그림을 창의 위쪽이 아니라 가로·세로 정중앙 기준으로 채운다 (모바일 인물 명부)
+export function card(c, rc = "#c8a050", { veil = false, showTrue = false, hideName = false, center = false } = {}) {
   const key = frameKey(c);
   const f = F[key];
   const col = { base: f.base, line: f.line, acc: f.acc || rc };
@@ -135,7 +136,7 @@ export function card(c, rc = "#c8a050", { veil = false, showTrue = false, hideNa
   s += `${grow(win, 1.13, 1.055)} fill="${col.base}"/>`;
   s += unline(mirror(f.deco(col)));
   s += `<g clip-path="url(#${id}w)"><rect x="0" y="0" width="${CW}" height="${CH}" fill="#1a1620"/>`;
-  if (img) s += `<image href="${img}" x="40" y="20" width="280" height="560" preserveAspectRatio="xMidYMin slice" ${veil ? `filter="url(#${id}b)"` : ""}/>`;
+  if (img) s += `<image href="${img}" x="40" y="20" width="280" height="560" preserveAspectRatio="${center ? "xMidYMid" : "xMidYMin"} slice" ${veil ? `filter="url(#${id}b)"` : ""}/>`;
   s += `<rect x="0" y="0" width="${CW}" height="${CH}" fill="url(#${id}g)"/></g>`;
   s += unline(f.crest(col));
   // 정보
