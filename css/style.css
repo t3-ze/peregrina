@@ -432,6 +432,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .site-plan { border-right: 0; border-bottom: 3px solid var(--ink); height: calc(62 * var(--vh)); }
   .npc-sheet { height: auto; }
   .npc-photo { border-right: 0; border-bottom: 3px solid var(--ink); height: calc(62 * var(--vh)); }
+  .npc-photo img { object-position: center center; } /* 모바일 프로필: 그림을 칸의 가로·세로 정중앙에 */
   #overlay { padding: calc(12px + env(safe-area-inset-top, 0px)) calc(12px + env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) calc(12px + env(safe-area-inset-left, 0px)); }
   .sheet { max-height: calc(96 * var(--vh)); }
   /* 책: 본문이 화면을 다 쓰고, 책 이름·목차(왼쪽 장)는 위 띠의 '목차'를 누르면 내려오는 접이식 장이 된다 */
