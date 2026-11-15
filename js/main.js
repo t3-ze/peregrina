@@ -175,7 +175,20 @@ const nightSky = (() => {
   }
   return `<div class="night">${h}</div>`;
 })();
-$("#sky").innerHTML = nightSky + `<div class="sky-in">${planisphere().map((svg, i) => `<div class="ps-layer ps-l${i}">${svg}</div>`).join("")}</div>`;
+$("#sky").innerHTML = nightSky + `<div class="sky-in">${planisphere().map((svg, i) => `<div class="ps-layer ps-l${i}">${LITE ? "" : svg}</div>`).join("")}</div>`;
+// 휴대폰: 도는 원반을 SVG 그대로 두면 기기 해상도(3배 등)로 한 장에 수십 MB씩 GPU 메모리를 먹어
+// 회전할 때마다 다시 그리게 된다. 낮은 해상도 캔버스에 한 번만 그려 두고 그 그림을 돌린다.
+if (LITE) {
+  const PX = 1100; // 캔버스 실제 화소 (배경이라 살짝 흐려도 티가 안 난다)
+  planisphere().forEach((svg, i) => {
+    const cv = document.createElement("canvas");
+    cv.width = cv.height = PX;
+    const img = new Image();
+    img.onload = () => { cv.getContext("2d").drawImage(img, 0, 0, PX, PX); URL.revokeObjectURL(img.src); };
+    img.src = URL.createObjectURL(new Blob([svg], { type: "image/svg+xml" }));
+    $(`#sky .ps-l${i}`).appendChild(cv);
+  });
+}
 const map = $("#map");
 const fx = $("#mapfx");
 const parts = buildMap(REGIONS);

@@ -145,7 +145,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .sky-in { position: relative; width: max(150vmax, 1400px); height: max(150vmax, 1400px); flex: none; will-change: transform; }
 .ps-layer { position: absolute; inset: 0; opacity: .55; will-change: transform; }
-.ps-layer svg { width: 100%; height: 100%; display: block; }
+.ps-layer svg, .ps-layer canvas { width: 100%; height: 100%; display: block; }
 .ps-l0 { animation: spin 420s linear infinite; }
 .ps-l1 { animation: spin 300s linear infinite reverse; }
 .ps-l2 { animation: spin 200s linear infinite; }
