@@ -414,6 +414,17 @@ function closeLayer() {
   layerBack = null;
 }
 let layerBack = null; // 인물 창을 닫으면 돌아갈 곳
+// 겹창 안에서 스크롤된 요소들의 위치(문서 순서 번호로 기억). 같은 HTML로 다시 그리면 같은 번호에 되돌린다.
+function snapScroll() {
+  const all = [overlay, ...overlay.querySelectorAll("*")], out = [];
+  all.forEach((el, i) => { if (el.scrollTop || el.scrollLeft) out.push([i, el.scrollTop, el.scrollLeft]); });
+  return out;
+}
+function restoreScroll(saved) {
+  const put = () => { const all = [overlay, ...overlay.querySelectorAll("*")]; for (const [i, t, l] of saved) if (all[i]) { all[i].scrollTop = t; all[i].scrollLeft = l; } };
+  put();
+  requestAnimationFrame(put); // 그림·글꼴이 늦게 자리 잡아 높이가 바뀌는 경우 한 번 더
+}
 overlay.addEventListener("click", (e) => {
   if (veilClick(e)) return;
   if (e.target === overlay || e.target.closest(".close")) {
@@ -493,7 +504,9 @@ function openNPC(name, back) {
   const imgVeil = c.imgSpoiler && !opened.has("img:" + name);
   const where = (WHERE[name] || []).map((id) => `<button type="button" data-site="${id}">${esc(siteName(SITE[id]))}</button>`).join("");
   const fam = c.fields.find((f) => f.k === "사역마" || f.k === "종족");
-  layerBack = back || null;
+  // 돌아갈 창(인물 명부·기관 도면 등)은 다시 그려지므로, 지금 스크롤 위치를 적어 뒀다가 돌아온 뒤 되돌린다
+  const scroll = snapScroll();
+  layerBack = back ? () => { back(); restoreScroll(scroll); } : null;
   openLayer(`<div class="sheet npc-sheet" role="dialog" aria-modal="true" aria-label="${esc(name)}">
     <button class="close" type="button" aria-label="${back ? "돌아가기" : "닫기"}">${back ? "↩" : "✕"}</button>
     <div class="npc-photo${imgVeil ? " veiled" : ""}">${c.img ? `<img src="${c.img}" alt="${esc(name)}의 초상">` : ""}</div>
