@@ -413,7 +413,21 @@ button { font: inherit; color: inherit; cursor: pointer; }
   .npc-photo { border-right: 0; border-bottom: 3px solid var(--ink); height: calc(62 * var(--vh)); }
   #overlay { padding: calc(12px + env(safe-area-inset-top, 0px)) calc(12px + env(safe-area-inset-right, 0px)) calc(12px + env(safe-area-inset-bottom, 0px)) calc(12px + env(safe-area-inset-left, 0px)); }
   .sheet { max-height: calc(96 * var(--vh)); }
-  .reader { grid-template-columns: 1fr; height: calc(94 * var(--vh)); overflow-y: auto; }
+  /* 책: 왼쪽 장(문양·제목·목차)이 위, 본문이 아래. 왼쪽 장은 내용만큼(최대 화면 42%) 차지하고 각자 스크롤한다.
+     예전엔 행 높이가 본문에 몰려 왼쪽 장이 80px 남짓으로 눌렸다. */
+  .reader { grid-template-columns: 1fr; grid-template-rows: auto minmax(0, 1fr); height: calc(94 * var(--vh)); padding: 10px; }
+  .reader .page { overflow: hidden; }
+  .reader .page.left { max-height: calc(42 * var(--vh)); border-right: 1.5px solid #8a7550; border-bottom: 0; box-shadow: inset 0 -18px 0 -14px rgba(60, 40, 20, .25); }
+  .reader .page.right { border-left: 1.5px solid #8a7550; border-top: 0; box-shadow: inset 0 18px 0 -14px rgba(60, 40, 20, .25); }
+  .reader .page-body { padding: 30px 26px 16px; }
+  .reader .page::before { inset: 9px; }
+  .bk-emblem { width: 60px; height: 60px; margin: 4px auto 6px; font-size: 26px; box-shadow: 0 0 0 4px var(--paper-3), 0 0 0 5.5px var(--ink); }
+  .bk-emblem svg { width: 36px; height: 36px; }
+  .bk-title { font-size: 26px; margin: 10px 0 2px; }
+  .bk-latin { font-size: 11px; letter-spacing: .3em; }
+  .toc { margin-top: 14px; }
+  .toc button { padding: 7px 4px; font-size: 14.5px; }
+  .pager { margin: 0 20px 12px; }
   .page { overflow: visible; }
 
   #regionPanel { top: auto; height: 52vh; width: 100%; border-left: 0; border-top: 3px solid var(--ink); box-shadow: 0 -8px 0 rgba(0, 0, 0, .3); padding: 22px 18px 30px; }
