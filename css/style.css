@@ -154,10 +154,11 @@ button { font: inherit; color: inherit; cursor: pointer; }
 @keyframes twinkle { 50% { opacity: .25; } }
 
 #stage { position: absolute; inset: 0; overflow: hidden; }
-#sheet { position: absolute; left: 0; top: 0; width: 3000px; height: 2000px; transform-origin: 0 0; will-change: transform; box-shadow: 0 40px 0 rgba(0, 0, 0, .35); }
+/* 판은 늘 화면 크기. 보이는 범위는 JS가 viewBox로 정한다(main.js apply) */
+#sheet { position: absolute; inset: 0; transform-origin: 0 0; will-change: transform; }
 #sheet.anim { transition: transform 1s var(--ease); }
-#map { display: block; contain: strict; }
-#mapfx { position: absolute; left: 0; top: 0; will-change: transform; overflow: visible; }
+#map { display: block; width: 100%; height: 100%; contain: strict; }
+#mapfx { position: absolute; left: 0; top: 0; width: 100%; height: 100%; will-change: transform; overflow: hidden; }
 #world.intro #sheet { animation: unfold 1.6s var(--ease) both; }
 @keyframes unfold { from { opacity: 0; clip-path: inset(0 50% 0 50%); } to { opacity: 1; clip-path: inset(0 0 0 0); } }
 

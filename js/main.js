@@ -194,6 +194,7 @@ const fx = $("#mapfx");
 const parts = buildMap(REGIONS);
 const letterX = 2770, letterY = 590;
 map.innerHTML = parts.defs +
+  `<rect x="0" y="40" width="${W}" height="${H}" fill="#000" opacity=".35"/>` + // 판 아래 그림자
   `<g id="sea">${parts.sea}</g><g id="land">${parts.land}</g><g id="labels">${parts.labels}</g>` +
   `<g id="letter" class="letter" transform="translate(${letterX},${letterY})" role="button" tabindex="0" aria-label="위치 불명의 서신"><g>
      <path d="M-70,-46 h140 v92 h-140z" fill="#f4e9cd" stroke="#2c2015" stroke-width="2.4" transform="rotate(-8)"/>
@@ -211,12 +212,41 @@ $("#hits").innerHTML = REGIONS.map((r) => `<path class="hit" data-id="${r.id}" d
 
 // ── 이동·확대 ──
 const stage = $("#stage"), sheet = $("#sheet");
+// view: 지도 좌표 w가 화면의 view.s * w + (view.x, view.y)에 오도록 보여 준다.
+// 3000×2000짜리 판을 CSS로 줄이면 휴대폰(특히 사파리)이 원래 크기 × 화소 배율로 레이어를 그려
+// 수백 MB를 쓰다가 검은 네모·빈 화면으로 깨진다. 그래서 SVG는 늘 화면 크기로 두고 viewBox로 보이는 범위를 정한다.
+// 확대·이동 애니메이션 동안만 두 화면을 모두 담는 viewBox를 그려 두고 CSS transform으로 움직인 뒤, 끝나면 목표 viewBox로 바꿔 선명하게 다시 그린다.
 const view = { x: 0, y: 0, s: 0.4 };
+let rest = null, animTimer = 0;
+const n2 = (v) => +v.toFixed(2);
+function setVB(v) {
+  const vb = `${n2(-v.x / v.s)} ${n2(-v.y / v.s)} ${n2(innerWidth / v.s)} ${n2(innerHeight / v.s)}`;
+  map.setAttribute("viewBox", vb);
+  fx.setAttribute("viewBox", vb);
+}
+// viewBox r로 그린 판을 v처럼 보이게 하는 transform
+const tf = (r, v) => { const k = v.s / r.s; return `translate(${n2(v.x - k * r.x)}px,${n2(v.y - k * r.y)}px) scale(${+k.toFixed(5)})`; };
 function apply(anim) {
-  sheet.classList.toggle("anim", !!anim);
-  sheet.style.transform = `translate(${view.x}px,${view.y}px) scale(${view.s})`;
+  const to = { ...view };
   const sky = $("#sky .sky-in");
-  if (sky) sky.style.transform = `translate3d(${(view.x - innerWidth / 2) * 0.04}px, ${(view.y - innerHeight / 2) * 0.04}px, 0)`;
+  if (sky) sky.style.transform = `translate3d(${(to.x - innerWidth / 2) * 0.04}px, ${(to.y - innerHeight / 2) * 0.04}px, 0)`;
+  clearTimeout(animTimer);
+  const from = rest;
+  rest = to;
+  if (!anim || !from) { sheet.classList.remove("anim"); sheet.style.transform = ""; setVB(to); return; }
+  // 두 화면이 보여 주는 지도 범위를 합친 것을 화면에 담는 보기
+  const box = (v) => [-v.x / v.s, -v.y / v.s, (innerWidth - v.x) / v.s, (innerHeight - v.y) / v.s];
+  const a = box(from), b = box(to);
+  const x0 = Math.min(a[0], b[0]), y0 = Math.min(a[1], b[1]), x1 = Math.max(a[2], b[2]), y1 = Math.max(a[3], b[3]);
+  const s = Math.min(innerWidth / (x1 - x0), innerHeight / (y1 - y0));
+  const r = { s, x: (innerWidth - (x1 - x0) * s) / 2 - x0 * s, y: (innerHeight - (y1 - y0) * s) / 2 - y0 * s };
+  sheet.classList.remove("anim");
+  setVB(r);
+  sheet.style.transform = tf(r, from);
+  sheet.getBoundingClientRect(); // 시작 상태를 확정
+  sheet.classList.add("anim");
+  sheet.style.transform = tf(r, to);
+  animTimer = setTimeout(() => { sheet.classList.remove("anim"); sheet.style.transform = ""; setVB(to); }, 1050);
 }
 // 메인 지도는 확대·이동 없이 화면 가운데에 꽉 차게 둔다. 대륙을 누를 때만 그 대륙을 당겨 보여 준다.
 function fit(anim = true) {
